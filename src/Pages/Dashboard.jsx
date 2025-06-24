@@ -66,7 +66,7 @@ const Dashboard = () => {
       <h1 className="text-sm font-sans mb-4">Here's what's happening with your WhatsApp business today.</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 py-4">
-  {/* Total Messages Card */}
+
   <div
     className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer"
     //eg- (transform transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer)this are effect card 
