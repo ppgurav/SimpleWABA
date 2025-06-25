@@ -130,8 +130,8 @@ function Segment() {
     try {
       const token = sessionStorage.getItem("auth_token") // or localStorage
   
-      await axios.put(
-        `${BASE_URL}/api/tags/${currentTagId}`,
+      await axios.post(
+        `${BASE_URL}/api/tags-update/${currentTagId}`,
         { tag_name: newTagName },
         {
           headers: {
@@ -161,13 +161,14 @@ function Segment() {
     }
   
     try {
-      await axios.delete(`${BASE_URL}/api/tags/${id}`, {
+      await axios.post(`${BASE_URL}/api/tags-delete/${id}`,
+        {}, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
       toast.success("Tag deleted successfully");
-      refetch(); // Refresh data
+      refetch(); 
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("Failed to delete tag");

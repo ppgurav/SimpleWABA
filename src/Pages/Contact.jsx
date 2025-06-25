@@ -3,6 +3,7 @@ import {
   ArrowDownUp,
   ChevronDown,
   ChevronUp,
+  Edit,
   Eye,
   EyeOff,
   FileDown,
@@ -10,11 +11,13 @@ import {
   Plus,
   PlusCircle,
   RefreshCcw,
+  Trash,
   Upload,
 } from "lucide-react"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import toast from "react-hot-toast"
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL
 dayjs.extend(relativeTime)
 
@@ -58,12 +61,13 @@ function Contact() {
   const [showOptionss, setShowOptionss] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
-  const [importType, setImportType] = useState("excel")
+  const [importType, setImportType] = useState("csv")
   const [selectedFile, setSelectedFile] = useState(null)
   const [createContactName, setCreateContactName] = useState("")
   const [createContactPhone, setCreateContactPhone] = useState("")
   const [createContactGroup, setCreateContactGroup] = useState("")
   const [isExporting, setIsExporting] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
 
   const [showColumnOptions, setShowColumnOptions] = useState(false)
   const [hiddenColumns, setHiddenColumns] = useState([])
@@ -74,6 +78,18 @@ function Contact() {
   const [contacts, setContacts] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  // Edit modal states
+  const [currentContactId, setCurrentContactId] = useState(null)
+  const [updatedName, setUpdatedName] = useState("")
+  const [updatedMobile, setUpdatedPhone] = useState("")
+  const [updatedEmail, setUpdatedEmail] = useState("")
+
+  // Delete confirmation modal states
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(false)
+  const [contactToDelete, setContactToDelete] = useState(null)
 
   const [fields, setFields] = useState([])
 
@@ -90,8 +106,7 @@ function Contact() {
     }
 
     try {
-      // const response = await fetch(`http://localhost:3001/api/contacts`, {
-        const response = await fetch(`${BASE_URL}/api/contacts`, {
+      const response = await fetch(`${BASE_URL}/api/contacts`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -109,6 +124,7 @@ function Contact() {
         group: user.group_id,
         tag: user.tags,
         phone: user.mobile,
+        email: user.email || "",
         type: ["Lead"],
         assigned: "Not assigned",
         status: "Connected",
@@ -127,7 +143,105 @@ function Contact() {
     }
   }
 
-  // Export function to handle file downloads
+  const updateContact = async () => {
+    if (!currentContactId || !updatedName.trim()) {
+      toast.error("Contact name cannot be empty")
+      return
+    }
+
+    // Validate phone number format (basic validation)
+    if (updatedMobile && !/^\+?[\d\s\-()]+$/.test(updatedMobile.trim())) {
+      toast.error("Please enter a valid phone number")
+      return
+    }
+
+    try {
+      const accessToken = sessionStorage.getItem("auth_token")
+
+      if (!accessToken) {
+        toast.error("Authentication token not found. Please login again.")
+        return
+      }
+
+      const requestBody = {
+        name: updatedName.trim(),
+        mobile: updatedMobile.trim(),
+        group_id: selectedGroupId ? Number.parseInt(selectedGroupId) : null,
+      }
+
+      console.log("Updating contact with data:", requestBody)
+      console.log("Contact ID:", currentContactId)
+
+      const response = await fetch(`${BASE_URL}/api/contacts-update/${currentContactId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      // Log response details for debugging
+      console.log("Response status:", response.status)
+      console.log("Response headers:", response.headers)
+
+      let result
+      try {
+        result = await response.json()
+        console.log("Response data:", result)
+      } catch (parseError) {
+        console.error("Failed to parse response as JSON:", parseError)
+        throw new Error(`Server returned invalid JSON. Status: ${response.status}`)
+      }
+
+      if (!response.ok) {
+        // Handle different types of errors
+        if (response.status === 401) {
+          toast.error("Authentication failed. Please login again.")
+          return
+        } else if (response.status === 403) {
+          toast.error("You don't have permission to update this contact.")
+          return
+        } else if (response.status === 404) {
+          toast.error("Contact not found.")
+          return
+        } else if (response.status === 422) {
+          toast.error("Invalid data provided. Please check your input.")
+          return
+        } else if (response.status >= 500) {
+          toast.error("Server error. Please try again later or contact support.")
+          console.error("Server error details:", result)
+          return
+        }
+
+        throw new Error(result?.message || `Failed to update contact: ${response.status}`)
+      }
+
+      if (result.success) {
+        toast.success("Contact updated successfully")
+        setShowEditModal(false)
+        setCurrentContactId(null)
+        setUpdatedName("")
+        setUpdatedPhone("")
+        setUpdatedEmail("")
+        setSelectedGroupId(null)
+        fetchContacts()
+      } else {
+        toast.error(result.message || "Failed to update contact")
+      }
+    } catch (error) {
+      console.error("Update contact error:", error)
+
+      // Handle network errors
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+        toast.error("Network error. Please check your connection and try again.")
+      } else {
+        toast.error(`Failed to update contact: ${error.message}`)
+      }
+    }
+  }
+
+  // Updated export function to handle the new API endpoint
   const handleExport = async (format) => {
     setIsExporting(true)
     const accessToken = sessionStorage.getItem("auth_token")
@@ -139,7 +253,7 @@ function Contact() {
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/api/contacts/export`, {
+      const response = await fetch(`${BASE_URL}/api/contacts/export?format=${format}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -150,7 +264,6 @@ function Contact() {
         throw new Error(`Export failed: ${response.status}`)
       }
 
-      // Get the filename from the response headers or use a default
       const contentDisposition = response.headers.get("Content-Disposition")
       let filename = `contacts.${format === "excel" ? "xlsx" : "csv"}`
 
@@ -161,7 +274,6 @@ function Contact() {
         }
       }
 
-      // Create blob and download
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
@@ -182,7 +294,55 @@ function Contact() {
     }
   }
 
-  // Fetch contacts on component mount
+  // New function to download import templates
+  const downloadTemplate = async (format) => {
+    const accessToken = sessionStorage.getItem("auth_token")
+
+    if (!accessToken) {
+      toast.error("Authentication token not found. Please login again.")
+      return
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/api/contacts/import-template/${format}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Template download failed: ${response.status}`)
+      }
+
+      const contentDisposition = response.headers.get("Content-Disposition")
+      let filename = `contact_template.${format === "excel" ? "xlsx" : "csv"}`
+
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      toast.success(`${format.toUpperCase()} template downloaded successfully`)
+    } catch (error) {
+      console.error("Template download error:", error)
+      toast.error(`Failed to download template: ${error.message}`)
+    }
+  }
+
+
   useEffect(() => {
     fetchContacts()
   }, [])
@@ -201,7 +361,6 @@ function Contact() {
   }, [showOptionss])
 
   const createContact = async () => {
-    // Validate required fields
     if (!createContactName.trim()) {
       toast.error("Name is required")
       return
@@ -229,7 +388,7 @@ function Contact() {
         body: JSON.stringify({
           name: createContactName.trim(),
           mobile: createContactPhone.trim(),
-          group_id: createContactGroup || null, // Send null if no group selected
+          group_id: createContactGroup || null,
         }),
       })
 
@@ -243,12 +402,11 @@ function Contact() {
       if (result.success) {
         toast.success(result.message || "Contact created successfully")
         setShowModal(false)
-        // Reset form fields
         setCreateContactName("")
         setCreateContactPhone("")
         setCreateContactGroup("")
-        setFields([]) // Clear additional fields
-        fetchContacts() // Refresh the contacts list
+        setFields([])
+        fetchContacts()
       } else {
         toast.error(result.message || "Failed to create contact")
       }
@@ -256,6 +414,57 @@ function Contact() {
       console.error("Create contact error:", error)
       toast.error(`Failed to create contact: ${error.message}`)
     }
+  }
+
+  const deleteContact = async (contactId) => {
+    try {
+      const accessToken = sessionStorage.getItem("auth_token")
+
+      if (!accessToken) {
+        toast.error("Authentication token not found. Please login again.")
+        return
+      }
+
+      const response = await fetch(`${BASE_URL}/api/contacts-delete/${contactId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Failed to delete contact: ${response.status}`)
+      }
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success("Contact deleted successfully")
+        setDeleteConfirmModal(false)
+        setContactToDelete(null)
+        fetchContacts()
+      } else {
+        toast.error(result.message || "Failed to delete contact")
+      }
+    } catch (error) {
+      console.error("Delete contact error:", error)
+      toast.error(`Failed to delete contact: ${error.message}`)
+    }
+  }
+
+  const handleEditClick = (contact) => {
+    setCurrentContactId(contact.id)
+    setUpdatedName(contact.name)
+    setUpdatedPhone(contact.phone)
+    setUpdatedEmail(contact.email || "")
+    setSelectedGroupId(contact.group)
+    setShowEditModal(true)
+  }
+
+  const handleDeleteClick = (contact) => {
+    setContactToDelete(contact)
+    setDeleteConfirmModal(true)
   }
 
   const handleSelectAll = () => {
@@ -286,7 +495,6 @@ function Contact() {
     return sortDirection === "asc" ? <ChevronUp size={15} /> : <ChevronDown size={15} />
   }
 
-  // Sort contacts based on current sort settings
   const sortedContacts = [...contacts].sort((a, b) => {
     let aVal = a[sortBy]
     let bVal = b[sortBy]
@@ -320,6 +528,7 @@ function Contact() {
     { label: "SOURCE", key: "source" },
     { label: "ACTIVE", key: "active" },
     { label: "CREATED AT", key: "createdAt" },
+    { label: "ACTION", key: "action" },
   ]
 
   const toggleColumn = (key) => {
@@ -339,23 +548,35 @@ function Contact() {
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (file) {
+
+      const fileExtension = file.name.split(".").pop().toLowerCase()
+      const allowedExtensions = importType === "csv" ? ["csv"] : ["xlsx", "xls"]
+
+      if (!allowedExtensions.includes(fileExtension)) {
+        toast.error(`Please select a valid ${importType.toUpperCase()} file`)
+        return
+      }
+
       setSelectedFile(file)
     }
   }
 
+ 
   const handleImport = async () => {
     if (!selectedFile) {
       toast.error("Please select a file first")
       return
     }
 
+    setIsImporting(true)
     const accessToken = sessionStorage.getItem("auth_token")
+
     if (!accessToken) {
       toast.error("Authentication token not found. Please login again.")
+      setIsImporting(false)
       return
     }
 
-    // Create FormData for file upload
     const formData = new FormData()
     formData.append("file", selectedFile)
 
@@ -369,17 +590,22 @@ function Contact() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `Import failed: ${response.status}`)
+        let errorMessage = `Import failed: ${response.status}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (e) {
+          
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
 
       if (result.success) {
-        toast.success(result.message || `Successfully imported ${selectedFile.name}`)
+        toast.success(result.message || `Successfully imported contacts from ${selectedFile.name}`)
         setShowImportModal(false)
         setSelectedFile(null)
-        // Refresh the contacts list to show imported contacts
         fetchContacts()
       } else {
         toast.error(result.message || "Import failed")
@@ -387,24 +613,22 @@ function Contact() {
     } catch (error) {
       console.error("Import error:", error)
       toast.error(`Failed to import contacts: ${error.message}`)
+    } finally {
+      setIsImporting(false)
     }
   }
 
-  // Filter contacts based on search
   const filteredContacts = sortedContacts.filter(
     (item) =>
       item.name.toLowerCase().includes(search.toLowerCase()) || (item.phone && item.phone.toString().includes(search)),
   )
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredContacts.length / itemsPerPage)
   const paginatedContacts = filteredContacts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-  // Function to refetch contacts
-
   return (
     <>
-      {/* Header with action buttons */}
+
       <div className="w-full px-4 sm:px-1 lg:px-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-16 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -503,6 +727,7 @@ function Contact() {
             <SearchHeader search={search} handleSearch={handleSearch} />
           </div>
         </div>
+
         {/* Column visibility dropdown */}
         {showColumnOptions && (
           <div className="absolute z-10 mt-24 w-56 bg-white border rounded-md shadow-lg p-2 top-[180px] sm:top-[120px]">
@@ -593,8 +818,23 @@ function Contact() {
                               <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-md inline-block text-center min-w-[60px] sm:min-w-[80px]">
                                 {item.status}
                               </span>
-                            ) : col.key === "createdAt" ? (
-                              dayjs(item.createdAt).fromNow()
+                            ) : col.key === "action" ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleEditClick(item)}
+                                  className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded hover:bg-blue-50"
+                                  title="Edit Contact"
+                                >
+                                  <Edit size={18} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(item)}
+                                  className="text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-50"
+                                  title="Delete Contact"
+                                >
+                                  <Trash size={18} />
+                                </button>
+                              </div>
                             ) : (
                               item[col.key]
                             )}
@@ -624,10 +864,10 @@ function Contact() {
               <option value={5}>5</option>
               <option value={10}>10</option>
               <option value={20}>20</option>
-              <option value={20}>50</option>
-              <option value={20}>200</option>
-              <option value={20}>500</option>
-              <option value={20}>1000</option>
+              <option value={50}>50</option>
+              <option value={200}>200</option>
+              <option value={500}>500</option>
+              <option value={1000}>1000</option>
             </select>
             <span className="text-sm text-gray-500">entries</span>
           </div>
@@ -652,14 +892,12 @@ function Contact() {
               let startPage = Math.max(1, currentPage - halfVisible)
               const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
 
-              // Adjust start page if we're near the end
               if (endPage - startPage + 1 < maxVisiblePages) {
                 startPage = Math.max(1, endPage - maxVisiblePages + 1)
               }
 
               const pages = []
 
-              // Add first page and ellipsis if needed
               if (startPage > 1) {
                 pages.push(
                   <button
@@ -680,7 +918,6 @@ function Contact() {
                 }
               }
 
-              // Add visible page numbers
               for (let i = startPage; i <= endPage; i++) {
                 pages.push(
                   <button
@@ -697,7 +934,6 @@ function Contact() {
                 )
               }
 
-              // Add ellipsis and last page if needed
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
                   pages.push(
@@ -750,7 +986,6 @@ function Contact() {
               </button>
             </div>
 
-            {/* Name & Phone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-sm">Name</label>
@@ -774,7 +1009,6 @@ function Contact() {
               </div>
             </div>
 
-            {/* Group & Segments */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-sm">Group</label>
@@ -800,7 +1034,6 @@ function Contact() {
               </div>
             </div>
 
-            {/* Additional Fields */}
             <div className="mt-6">
               <h2 className="font-semibold">Additional Fields</h2>
               <p className="text-sm text-gray-400">Add custom fields to store more information</p>
@@ -851,7 +1084,6 @@ function Contact() {
                   />
                 </div>
 
-                {/* Remove button in its own column */}
                 <div className="flex items-center justify-end">
                   <button
                     onClick={() => {
@@ -885,14 +1117,127 @@ function Contact() {
         </div>
       )}
 
-      {/* Import Modal */}
+      {/* Edit Contact Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-lg w-full max-w-md mx-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Edit Contact</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex flex-col">
+                <label className="font-semibold mb-1 text-sm">Name</label>
+                <input
+                  type="text"
+                  placeholder="Enter Name"
+                  value={updatedName}
+                  onChange={(e) => setUpdatedName(e.target.value)}
+                  className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="font-semibold mb-1 text-sm">Phone</label>
+                <input
+                  type="tel"
+                  placeholder="Enter Phone number"
+                  value={updatedMobile}
+                  onChange={(e) => setUpdatedPhone(e.target.value)}
+                  className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="font-semibold mb-1 text-sm">Group</label>
+                <select
+                  value={selectedGroupId || ""}
+                  onChange={(e) => setSelectedGroupId(e.target.value || null)}
+                  className="p-2 border border-gray-200 text-sm rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select Group</option>
+                  <option value="1">Apple</option>
+                  <option value="2">Banana</option>
+                  <option value="3">Cherry</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-3 py-2 text-sm rounded border hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateContact}
+                className="px-3 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+              >
+                Update Contact
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmModal && contactToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 shadow-lg w-full max-w-md mx-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-red-600">Delete Contact</h2>
+              <button
+                onClick={() => setDeleteConfirmModal(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Are you sure you want to delete the contact{" "}
+                <span className="font-semibold">"{contactToDelete.name}"</span>?
+              </p>
+              <p className="text-sm text-gray-500 mt-2">This action cannot be undone.</p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteConfirmModal(false)}
+                className="px-3 py-2 text-sm rounded border hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteContact(contactToDelete.id)}
+                className="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Updated Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-lg p-4 sm:p-6 shadow-lg w-full max-w-md mx-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Import Contacts</h2>
               <button
-                onClick={() => setShowImportModal(false)}
+                onClick={() => {
+                  setShowImportModal(false)
+                  setSelectedFile(null)
+                }}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
                 ✕
@@ -906,23 +1251,29 @@ function Contact() {
                   <input
                     type="radio"
                     name="importType"
-                    value="excel"
-                    checked={importType === "excel"}
-                    onChange={() => setImportType("excel")}
+                    value="csv"
+                    checked={importType === "csv"}
+                    onChange={() => {
+                      setImportType("csv")
+                      setSelectedFile(null) // Reset file when changing type
+                    }}
                     className="mr-2"
                   />
-                  Excel (.xlsx)
+                  CSV (.csv)
                 </label>
                 <label className="flex items-center">
                   <input
                     type="radio"
                     name="importType"
-                    value="csv"
-                    checked={importType === "csv"}
-                    onChange={() => setImportType("csv")}
+                    value="excel"
+                    checked={importType === "excel"}
+                    onChange={() => {
+                      setImportType("excel")
+                      setSelectedFile(null) // Reset file when changing type
+                    }}
                     className="mr-2"
                   />
-                  CSV (.csv)
+                  Excel (.xlsx)
                 </label>
               </div>
             </div>
@@ -949,7 +1300,7 @@ function Contact() {
                       <input
                         type="file"
                         className="hidden"
-                        accept={importType === "excel" ? ".xlsx, .xls" : ".csv"}
+                        accept={importType === "excel" ? ".xlsx,.xls" : ".csv"}
                         onChange={handleFileChange}
                       />
                     </label>
@@ -959,32 +1310,36 @@ function Contact() {
               <p className="text-xs text-gray-500 mt-2">
                 {importType === "excel" ? "Supported formats: .xlsx, .xls" : "Supported format: .csv"}
               </p>
+              <p className="text-xs text-gray-500 mt-1">Required columns: name, phone, email, group_id</p>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-between gap-4">
               <button
-                onClick={() => {
-                  console.log("Download template")
-                }}
+                onClick={() => downloadTemplate(importType)}
                 className="px-3 py-2 text-sm text-indigo-600 hover:text-indigo-800 text-center sm:text-left transition-colors"
               >
-                Download Template
+                Download {importType.toUpperCase()} Template
               </button>
               <div className="flex gap-2 justify-end">
                 <button
-                  onClick={() => setShowImportModal(false)}
+                  onClick={() => {
+                    setShowImportModal(false)
+                    setSelectedFile(null)
+                  }}
                   className="px-3 py-2 text-sm rounded border hover:bg-gray-100 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleImport}
-                  disabled={!selectedFile}
+                  disabled={!selectedFile || isImporting}
                   className={`px-3 py-2 text-sm rounded text-white ${
-                    selectedFile ? "bg-indigo-600 hover:bg-indigo-700" : "bg-indigo-400 cursor-not-allowed"
+                    selectedFile && !isImporting
+                      ? "bg-indigo-600 hover:bg-indigo-700"
+                      : "bg-indigo-400 cursor-not-allowed"
                   } transition-colors`}
                 >
-                  Import
+                  {isImporting ? "Importing..." : "Import"}
                 </button>
               </div>
             </div>

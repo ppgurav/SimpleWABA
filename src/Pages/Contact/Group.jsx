@@ -128,8 +128,8 @@ function Group() {
     try {
       const accessToken = sessionStorage.getItem("auth_token")
 
-      await axios.put(
-        `${BASE_URL}/api/groups/${currentGroup.id}`,
+      await axios.post(
+        `${BASE_URL}/api/groups-update/${currentGroup.id}`,
         {
           group_name: newGroupName,
         },
@@ -154,7 +154,7 @@ function Group() {
     try {
       const accessToken = sessionStorage.getItem("auth_token")
 
-      await axios.delete(`${BASE_URL}/api/groups/${id}`, {
+      await axios.delete(`${BASE_URL}/api/groups-delete/${id}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
