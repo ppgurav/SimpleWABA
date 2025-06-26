@@ -85,7 +85,7 @@ function Contact() {
   const [currentContactId, setCurrentContactId] = useState(null)
   const [updatedName, setUpdatedName] = useState("")
   const [updatedMobile, setUpdatedPhone] = useState("")
-  const [updatedEmail, setUpdatedEmail] = useState("")
+  const [selectedTags, setselectedTags] = useState("")
 
   // Delete confirmation modal states
   const [deleteConfirmModal, setDeleteConfirmModal] = useState(false)
@@ -167,6 +167,7 @@ function Contact() {
         name: updatedName.trim(),
         mobile: updatedMobile.trim(),
         group_id: selectedGroupId ? Number.parseInt(selectedGroupId) : null,
+        tags :selectedTags
       }
 
       console.log("Updating contact with data:", requestBody)
@@ -181,7 +182,7 @@ function Contact() {
         body: JSON.stringify(requestBody),
       })
 
-      // Log response details for debugging
+
       console.log("Response status:", response.status)
       console.log("Response headers:", response.headers)
 
@@ -195,7 +196,7 @@ function Contact() {
       }
 
       if (!response.ok) {
-        // Handle different types of errors
+  
         if (response.status === 401) {
           toast.error("Authentication failed. Please login again.")
           return
@@ -223,7 +224,7 @@ function Contact() {
         setCurrentContactId(null)
         setUpdatedName("")
         setUpdatedPhone("")
-        setUpdatedEmail("")
+        setselectedTags("")
         setSelectedGroupId(null)
         fetchContacts()
       } else {
@@ -232,7 +233,7 @@ function Contact() {
     } catch (error) {
       console.error("Update contact error:", error)
 
-      // Handle network errors
+
       if (error.name === "TypeError" && error.message.includes("fetch")) {
         toast.error("Network error. Please check your connection and try again.")
       } else {
@@ -241,7 +242,7 @@ function Contact() {
     }
   }
 
-  // Updated export function to handle the new API endpoint
+
   const handleExport = async (format) => {
     setIsExporting(true)
     const accessToken = sessionStorage.getItem("auth_token")
@@ -294,7 +295,7 @@ function Contact() {
     }
   }
 
-  // New function to download import templates
+
   const downloadTemplate = async (format) => {
     const accessToken = sessionStorage.getItem("auth_token")
 
@@ -457,7 +458,7 @@ function Contact() {
     setCurrentContactId(contact.id)
     setUpdatedName(contact.name)
     setUpdatedPhone(contact.phone)
-    setUpdatedEmail(contact.email || "")
+    setselectedTags(contact.tag || "")
     setSelectedGroupId(contact.group)
     setShowEditModal(true)
   }
@@ -1167,6 +1168,18 @@ function Contact() {
                   <option value="3">Cherry</option>
                 </select>
               </div>
+
+              <div className="flex flex-col">
+                <label className="font-semibold mb-1 text-sm">Tags</label>
+                <input
+                  type="text"
+                  placeholder="tag"
+                  value={selectedTags}
+                  onChange={(e) => setselectedTags(e.target.value)}
+                  className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
