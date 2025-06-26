@@ -147,6 +147,8 @@ function Group() {
     } catch (error) {
       console.error("Edit error:", error)
       toast.error("Failed to update group")
+      
+
     }
   }
 
@@ -154,7 +156,7 @@ function Group() {
     try {
       const accessToken = sessionStorage.getItem("auth_token")
 
-      await axios.delete(`${BASE_URL}/api/groups-delete/${id}`, {
+      await axios.post(`${BASE_URL}/api/groups-delete/${id}`,{}, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -165,6 +167,7 @@ function Group() {
     } catch (error) {
       console.error("Delete error:", error)
       toast.error("Failed to delete group")
+      console.log("Token being used:", token);
     }
   }
 
