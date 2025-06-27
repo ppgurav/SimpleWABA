@@ -81,13 +81,13 @@ function Contact() {
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
-  // Edit modal states
+
   const [currentContactId, setCurrentContactId] = useState(null)
   const [updatedName, setUpdatedName] = useState("")
   const [updatedMobile, setUpdatedPhone] = useState("")
   const [selectedTags, setselectedTags] = useState("")
 
-  // Delete confirmation modal states
+
   const [deleteConfirmModal, setDeleteConfirmModal] = useState(false)
   const [contactToDelete, setContactToDelete] = useState(null)
 
@@ -149,7 +149,7 @@ function Contact() {
       return
     }
 
-    // Validate phone number format (basic validation)
+
     if (updatedMobile && !/^\+?[\d\s\-()]+$/.test(updatedMobile.trim())) {
       toast.error("Please enter a valid phone number")
       return
@@ -238,6 +238,7 @@ function Contact() {
         toast.error("Network error. Please check your connection and try again.")
       } else {
         toast.error(`Failed to update contact: ${error.message}`)
+        
       }
     }
   }
