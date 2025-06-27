@@ -122,7 +122,8 @@ function Contact() {
         id: user.id,
         name: user.name,
         group: user.group_id,
-        tag: user.tags,
+        group_name: user.group_name,
+        tags: user.tags,
         phone: user.mobile,
         email: user.email || "",
         type: ["Lead"],
@@ -130,7 +131,7 @@ function Contact() {
         status: "Connected",
         source: "web",
         active: true,
-        createdAt: user.created_ts,
+        // createdAt: user.created_ts,
       }))
 
       setContacts(transformedData)
@@ -162,6 +163,37 @@ function Contact() {
         toast.error("Authentication token not found. Please login again.")
         return
       }
+
+      // const formattedTags = (() => {
+      //   if (!selectedTags || selectedTags.length === 0) {
+      //     return null; // or [] depending on API expectation
+      //   }
+      
+      //   // Handle string input (e.g., from text input like "tag1,tag2")
+      //   if (typeof selectedTags === 'string') {
+      //     const tagNames = selectedTags
+      //       .split(',')
+      //       .map(tag => tag.trim())
+      //       .filter(tag => tag.length > 0)
+      
+      //     return tagNames.length > 0
+      //       ? tagNames.map(tag => ({ id: null, tag_name: tag }))
+      //       : null
+      //   }
+      
+      //   // Handle array of tag objects (e.g., from tag selector component)
+      //   if (Array.isArray(selectedTags)) {
+      //     const validTags = selectedTags
+      //       .filter(tag => tag?.tag_name)
+      //       .map(tag => ({
+      //         id: tag.id ?? null,
+      //         tag_name: tag.tag_name.trim(),
+      //       }))
+      //     return validTags.length > 0 ? validTags : null
+      //   }
+      
+      //   return null
+      // })()
 
       const requestBody = {
         name: updatedName.trim(),
@@ -224,7 +256,7 @@ function Contact() {
         setCurrentContactId(null)
         setUpdatedName("")
         setUpdatedPhone("")
-        setselectedTags("")
+        setselectedTags(null)
         setSelectedGroupId(null)
         fetchContacts()
       } else {
@@ -523,13 +555,14 @@ function Contact() {
     { label: "NAME", key: "name" },
     { label: "Group", key: "group" },
     { label: "PHONE", key: "phone" },
-    { label: "Tags", key: "tag" },
+    { label: " GROUP NAME", key: "group_name" },
+    { label: "Tags", key: "tags" },
     { label: "Type", key: "type" },
     { label: "STATUS", key: "status" },
     { label: "Assigned", key: "assigned" },
     { label: "SOURCE", key: "source" },
     { label: "ACTIVE", key: "active" },
-    { label: "CREATED AT", key: "createdAt" },
+    // { label: "CREATED AT", key: "createdAt" },
     { label: "ACTION", key: "action" },
   ]
 
@@ -796,13 +829,20 @@ function Contact() {
                           className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                         />
                       </td>
-                      {columns
+                      {/* {columns
                         .filter((col) => !hiddenColumns.includes(col.key))
                         .map((col) => (
                           <td key={col.key} className="p-2 md:p-3 whitespace-nowrap">
                             {col.key === "type" ? (
                               <span className="capitalize">{item[col.key].join(", ")}</span>
-                            ) : col.key === "active" ? (
+                            ) : col.key === "tags" ? (
+                              <div className="max-w-xs">
+                                <span className="text-sm text-gray-600 truncate block" title={item.tags}>
+                                  {item.tags || " "}
+                                </span>
+                              </div>
+                            ) 
+                            : col.key === "active" ? (
                               <label className="relative inline-flex items-center cursor-pointer">
                                 <input
                                   type="checkbox"
@@ -841,7 +881,81 @@ function Contact() {
                               item[col.key]
                             )}
                           </td>
-                        ))}
+                        ))} */}
+  {columns
+  .filter((col) => !hiddenColumns.includes(col.key))
+  .map((col) => (
+    <td key={col.key} className="p-2 md:p-3 whitespace-nowrap">
+      {col.key === "type" ? (
+        <span className="capitalize">{item[col.key].join(", ")}</span>
+      ) : col.key === "tags" ? (
+        <div className="max-w-xs flex flex-wrap gap-1">
+          {(() => {
+            try {
+              const parsedTags = typeof item.tags === "string" ? JSON.parse(item.tags) : item.tags;
+              const validTags = Array.isArray(parsedTags)
+                ? parsedTags.filter(tag => tag && tag.tag_name && tag.tag_name.trim() !== "")
+                : [];
+
+              if (validTags.length > 0) {
+                return validTags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-block bg-gray-200  px-2 py-1 rounded text-xs"
+                  >
+                    {tag.tag_name}
+                  </span>
+                ));
+              } else {
+                return <span className="text-sm text-gray-500 italic">N/A</span>;
+              }
+            } catch (err) {
+              return <span className="text-sm text-red-500 italic">Invalid tags</span>;
+            }
+          })()}
+        </div>
+      ) : col.key === "active" ? (
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={item.active}
+            onChange={() =>
+              setContacts((prev) =>
+                prev.map((c) => (c.id === item.id ? { ...c, active: !c.active } : c)),
+              )
+            }
+            className="sr-only peer"
+          />
+          <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 after:absolute after:top-[2px] after:left-[2px] after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:rounded-full after:bg-white after:border after:transition-all peer-checked:after:translate-x-full"></div>
+        </label>
+      ) : col.key === "status" ? (
+        <span className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-md inline-block text-center min-w-[60px] sm:min-w-[80px]">
+          {item.status}
+        </span>
+      ) : col.key === "action" ? (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleEditClick(item)}
+            className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded hover:bg-blue-50"
+            title="Edit Contact"
+          >
+            <Edit size={18} />
+          </button>
+          <button
+            onClick={() => handleDeleteClick(item)}
+            className="text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-50"
+            title="Delete Contact"
+          >
+            <Trash size={18} />
+          </button>
+        </div>
+      ) : (
+        item[col.key]
+      )}
+    </td>
+  ))}
+
+
                     </tr>
                   ))}
                 </tbody>
@@ -1173,8 +1287,8 @@ function Contact() {
               <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-sm">Tags</label>
                 <input
-                  type="text"
-                  placeholder="tag"
+                  type="text/number"
+                  placeholder="tags"
                   value={selectedTags}
                   onChange={(e) => setselectedTags(e.target.value)}
                   className="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
