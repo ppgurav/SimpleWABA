@@ -869,13 +869,22 @@ function Navbar({ children }) {
   return (
     <div className="h-screen overflow-hidden ">
       {/* Mobile menu button */}
-      <button
+      {/* <button
         className="md:hidden fixed top-4 left-4 z-30 bg-white p-3 rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition-all duration-300 hover:scale-110 active:scale-95"
         onClick={toggleSidebar}
         aria-label="Toggle sidebar"
       >
         {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
+      </button> */}
+      {!isOpen && (
+  <button
+    className="md:hidden fixed top-4 left-4 z-30 bg-white p-3 rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition-all duration-300 hover:scale-110 active:scale-95"
+    onClick={toggleSidebar}
+    aria-label="Toggle sidebar"
+  >
+    <Menu size={20} />
+  </button>
+)}
 
       {/* Sidebar */}
       <div
