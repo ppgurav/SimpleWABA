@@ -11,7 +11,7 @@ function Setup() {
   const getLinkClasses = (path) => {
     const isActive = location.pathname === `/setup/${path}`  // or use endsWith(path)
     const baseClasses = "flex items-center gap-2 py-2 px-3 rounded-lg transition-colors duration-200"
-    const activeClasses = "bg-blue-100 text-blue-600 font-medium border-l-4 border-blue-600"
+    const activeClasses = "bg-gradient-to-r text-white from-blue-500 to-purple-600  shadow-blue-500/25font-medium border-l-4 border-blue-600"
     const inactiveClasses = "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
     return `${baseClasses} ${isActive ? activeClasses : inactiveClasses}`
   }
@@ -20,7 +20,7 @@ function Setup() {
   return (
     <div className="flex">
       {isSidebarOpen && (
-        <div className="w-64 bg-white border-r p-4 h-screen space-y-4 fixed top-0 left-0 z-40">
+        <div className="w-72 bg-white border-r p-4 h-screen space-y-4 fixed top-0 left-0 z-40">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-black">Setup</h1>
             <button onClick={closeSidebar}>

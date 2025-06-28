@@ -93,6 +93,43 @@ function Contact() {
 
   const [fields, setFields] = useState([])
 
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef()
+
+  const parsedTags = (() => {
+    try {
+      const tags = typeof item.tags === "string" ? JSON.parse(item.tags) : item.tags
+      if (Array.isArray(tags)) {
+        return tags.filter((tag) => tag.tag_name)
+      }
+    } catch (e) {}
+    return []
+  })()
+
+  const toggleTag = (tagName) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagName)
+        ? prev.filter((t) => t !== tagName)
+        : [...prev, tagName]
+    )
+  }
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+
+
+  
+
+  
   const fetchContacts = async () => {
     setIsLoading(true)
     setError(null)
@@ -664,7 +701,7 @@ function Contact() {
   return (
     <>
 
-      <div className="w-full px-4 sm:px-1 lg:px-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-16 mb-6">
+      <div className="w-full px-4 sm:px-1 lg:px-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-28 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowModal(true)}
@@ -1134,12 +1171,12 @@ function Contact() {
                   className="p-2 border border-gray-200 text-sm rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="">Select Group</option>
-                  <option value="1">Apple</option>
-                  <option value="2">Banana</option>
-                  <option value="3">Cherry</option>
+                  <option value="1">Defaultgroup 1</option>
+                  <option value="2">Defaultgroup 2</option>
+                  <option value="3">VIP</option>
                 </select>
               </div>
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-sm">Segments/Tags</label>
                 <select className="p-2 border border-gray-200 text-sm rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                   <option value="">Select Segments</option>
@@ -1147,7 +1184,38 @@ function Contact() {
                   <option value="banana">Banana</option>
                   <option value="cherry">Cherry</option>
                 </select>
-              </div>
+              </div> */}
+              <div className="flex flex-col">
+  <label className="font-semibold mb-1 text-sm">Segments/Tags</label>
+  <select
+    className="p-2 border border-gray-200 text-sm rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+  >
+    <option value="">Select Segments</option>
+    {(() => {
+      try {
+        const parsedTags =
+          typeof item.tags === "string" ? JSON.parse(item.tags) : item.tags;
+
+        if (
+          Array.isArray(parsedTags) &&
+          parsedTags.length > 0 &&
+          parsedTags.some((tag) => tag.tag_name)
+        ) {
+          return parsedTags.map((tag) => (
+            <option key={tag.id || tag.tag_name} value={tag.tag_name}>
+              {tag.tag_name}
+            </option>
+          ));
+        } else {
+          return <option disabled>No valid tags</option>;
+        }
+      } catch (err) {
+        return <option disabled>Invalid tag format</option>;
+      }
+    })()}
+  </select>
+</div>
+
             </div>
 
             <div className="mt-6">
@@ -1272,7 +1340,7 @@ function Contact() {
 
               <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-sm">Group</label>
-                <select
+                {/* <select
                   value={selectedGroupId || ""}
                   onChange={(e) => setSelectedGroupId(e.target.value || null)}
                   className="p-2 border border-gray-200 text-sm rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -1281,8 +1349,29 @@ function Contact() {
                   <option value="1">Apple</option>
                   <option value="2">Banana</option>
                   <option value="3">Cherry</option>
-                </select>
-              </div>
+                </select> */}
+
+
+
+
+
+  <select
+    value={selectedGroupId ?? ""}
+    onChange={(e) => {
+      const value = e.target.value;
+      setSelectedGroupId(value ? Number(value) : null);
+    }}
+    className="p-2 border border-gray-200 text-sm rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+  >
+                  <option value="">Select Group</option>
+                  <option value="1">Defaultgroup 1</option>
+                  <option value="2">Defaultgroup 2</option>
+                  <option value="3">VIP</option>
+  </select>
+  
+
+</div>
+
 
               <div className="flex flex-col">
                 <label className="font-semibold mb-1 text-sm">Tags</label>

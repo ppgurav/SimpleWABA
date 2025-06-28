@@ -72,7 +72,7 @@ function ConnectWABA() {
   };
   
   return (
-    <div className="w-full px-2 sm:px-0 md:px-0 py-20">
+    <div className="w-full px-2 sm:px-0 md:px-0 py-20 mt-16">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl font-semibold">WhatsApp Business Account</h1>
         <div className="flex flex-wrap gap-4">

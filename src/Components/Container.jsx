@@ -7,9 +7,10 @@ function Container() {
       <div className="flex flex-col md:flex-row h-screen bg-gray-100 ">
      
       <Navbar />
-      <main className="flex-1 p-0">
-        <Outlet/>
-      </main>
+<main className="flex-1 flex items-center justify-center">
+  <Outlet />
+</main>
+
       
     </div>
   )
