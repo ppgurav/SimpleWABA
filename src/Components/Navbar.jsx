@@ -1068,7 +1068,7 @@ function Navbar({ children }) {
             </Link>
 
             {/* Plus menu */}
-            <div className="relative dropdown-container">
+            <div className="relative dropdown-container px-3">
               <button
                 onClick={() => setIsPlusMenuOpen(!isPlusMenuOpen)}
                 // className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white p-3 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 active:scale-95 hover:from-emerald-600 hover:to-teal-700"
@@ -1079,8 +1079,8 @@ function Navbar({ children }) {
               </button>
 
               {isPlusMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 backdrop-blur-md">
-                  <div className="py-2">
+                <div className="absolute right-0  py-2 top-full px-2 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 backdrop-blur-md ">
+                  <div className="py-3 px-5">
                     <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50">
                       Quick Access
                     </div>
