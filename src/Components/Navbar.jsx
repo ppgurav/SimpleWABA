@@ -903,7 +903,7 @@ function Navbar({ children }) {
         >
           <div className={`${!isOpen ? "hidden" : "block"}`}>
             <div className=" ">
-            <img src="/waba logo 18-04-2025 (1).svg" className=" h-32 w-96 object-contain" alt="Logo" />
+            <img src="/waba logo 18-04-2025 (1).svg" className=" h-16 w-96 object-contain" alt="Logo" />
             </div>
           </div>
           <button
