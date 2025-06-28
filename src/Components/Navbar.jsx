@@ -1192,9 +1192,9 @@ function Navbar({ children }) {
             ${isMobile ? "ml-0" : isOpen ? "ml-72" : "ml-20"}
           `}
         >
-          <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50 p-6">
-            <div className="bg-white rounded-2xl shadow-lg shadow-gray-200/50 h-full p-6">{children}</div>
-          </div>
+          {/* <div className="h-full bg-gradient-to-br from-gray-50 to-blue-50 p-6"> */}
+            {children}
+          {/* </div> */}
         </div>
       </div>
     </div>
