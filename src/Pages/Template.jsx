@@ -584,7 +584,7 @@ function Template() {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
-    <div className="w-full px-2 sm:px-4 md:px-1 lg:px-17 py-4 mt-12">
+    <div className="w-full px-2 sm:px-4 md:px-1 lg:px-17 py-4 mt-16">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <div className="flex flex-wrap gap-2">
           <button onClick={() => navigate("/temp/create")} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border bg-indigo-600 hover:bg-indigo-700 text-white shadow">

@@ -22,6 +22,7 @@
         font-size: 81.13px;
       }
     </style>
+    
   </defs>
-  <text class="st2" transform="translate(19.05 342.33)"><tspan class="st0" x="0" y="0">s</tspan><tspan class="st3" x="97.86" y="0">imple</tspan><tspan class="st1" x="277.73" y="0">WABA</tspan></text>
+  <text class="st2" transform="translate(19.05 342.33)"><tspan class="st0" x="0" y="0" cx="200" cy="100" r="180" fill="#e0f2d9" stroke="#62ba47" stroke-width="10">s</tspan><tspan class="st3" x="97.86" y="0">imple</tspan><tspan class="st1" x="277.73" y="0">WABA</tspan></text>
 </svg>

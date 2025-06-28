@@ -17,7 +17,7 @@ function EmailTemplate() {
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-1  py-10">
+    <div className="w-full px-4 sm:px-6 lg:px-1  py-14">
       <div className="w-full max-w-8xl max-h-full mx-auto bg-white rounded-xl shadow border p-6 sm:p-8 space-y-6">
         <h1 className="text-2xl font-bold text-gray-800">Email Template</h1>
         <div className="border-b border-gray-300" />

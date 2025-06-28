@@ -114,7 +114,7 @@ function CannedReply() {
   };
 
   return (
-    <div className="px-4 md:px-0 mt-9">
+    <div className="px-4 md:px-0 mt-14">
       <div className="max-w-full mx-auto flex justify-end items-center mt-10 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow">

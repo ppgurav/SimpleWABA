@@ -215,7 +215,7 @@ function Group() {
   }
 
   return (
-    <div className="w-full min-h-screen p-4 sm:p-6 md:p-0 mt-28">
+    <div className="w-full min-h-screen p-4 sm:p-6 md:p-0 mt-20">
       <div className="flex items-center gap-3 flex-wrap mb-6">
         <button
           onClick={() => setShowModal(true)}

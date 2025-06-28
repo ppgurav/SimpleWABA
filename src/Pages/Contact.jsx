@@ -701,7 +701,7 @@ function Contact() {
   return (
     <>
 
-      <div className="w-full px-4 sm:px-1 lg:px-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-28 mb-6">
+      <div className="w-full px-4 sm:px-1 lg:px-1 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-20 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowModal(true)}

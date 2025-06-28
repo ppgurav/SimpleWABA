@@ -977,7 +977,7 @@ function Chat() {
   }, [showReactionMenu])
 
   return (
-    <div className="flex h-full bg-gray-100 p-2 md:p-14 lg:p-1 gap-2 md:gap-4 mt-10">
+    <div className="flex h-full bg-gray-100 p-2 md:p-14 lg:p-1 gap-2 md:gap-4 mt-20">
       <div
         className={`${showSidebar ? "flex" : "hidden"} md:flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden ${isMobile ? "w-full" : "w-full md:w-1/3"}`}
       >

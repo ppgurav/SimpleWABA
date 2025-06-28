@@ -132,7 +132,7 @@ function AiPrompts() {
   }
 
   return (
-    <div className="px-1 md:px-1 mt-9">
+    <div className="px-1 md:px-1 mt-14">
       <div className="max-w-full mx-auto flex justify-between items-center mt-10 mb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <button
