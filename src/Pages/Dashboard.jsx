@@ -297,10 +297,10 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile-first responsive layout */}
+    <div className="min-h-screen bg-gray-50 mt-14">
+
       <div className="flex flex-col lg:flex-row">
-        {/* Main Content Section */}
+
         <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           {/* Welcome Header */}
           <div className="mb-6 sm:mb-8">
@@ -312,9 +312,9 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Stats Cards Grid */}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6 sm:mb-8">
-            {/* Total Messages Card */}
+ 
             <div className="bg-gradient-to-br from-blue-50 to-white p-4 sm:p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer">
               <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div className="bg-blue-100 text-blue-600 p-2 rounded-lg animate-pulse">
