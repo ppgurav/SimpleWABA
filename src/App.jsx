@@ -30,6 +30,7 @@ import CampaignCreate from "./Pages/CampaignCreate/CampaignCreate";
 import ForgetPassword from "./Pages/Auth/ForgetPassword";
 import OTPValidation from "./Pages/Auth/OTPValidation";
 import ResetPassword from "./Pages/Auth/ResetPassword";
+import ProfilePage from "./Components/Profile";
 
 function App() {
   return (
@@ -76,6 +77,7 @@ function App() {
         <Route path="/contact/segment" element={<Segment />} /> 
         
         <Route path="/contact/group" element={<Group />} /> 
+        <Route path="/profile" element={<ProfilePage />} /> 
                 </Routes>
               </div>
             </div>
