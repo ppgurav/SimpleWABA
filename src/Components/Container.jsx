@@ -4,15 +4,12 @@ import Sidebar from "./Sidebar";
 
 function Container() {
   return (
-      <div className="flex flex-col md:flex-row h-screen bg-gray-100 ">
-     
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-gray-100">
       <Navbar />
-       <main className="flex-1">
+      <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
-
-      
     </div>
-  )
+  );
 }
 export default Container;

@@ -166,6 +166,10 @@
 
 
 
+
+
+
+
 import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import {
@@ -642,65 +646,72 @@ function Navbar({ children }) {
               )}
             </div>
 
-
             <div className="relative dropdown-container flex items-center gap-3">
-              {/* Button */}
-              <button
-                onClick={() => setIsUserOpen(!isUserOpen)}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full text-white p-2 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 ring-2 ring-transparent hover:ring-blue-300 hover:ring-opacity-50"
-                title="User Menu"
-              >
-                <User2Icon size={20} />
-              </button>
+      {/* Button */}
+      <button
+        onClick={() => setIsUserOpen(!isUserOpen)}
+        className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-full text-white p-2 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 ring-2 ring-transparent hover:ring-blue-300 hover:ring-opacity-50"
+        title="User Menu"
+      >
+        <User2Icon size={20} />
+      </button>
 
-              <div className="flex flex-col leading-tight">
-                <span className="text-gray-800 text-sm font-medium">
-                  {isLoadingUser ? "Loading..." : userData.name}
-                </span>
-                <p className="text-gray-500 text-xs">{isLoadingUser ? "..." : userData.user_type}</p>
-              </div>
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsUserOpen(!isUserOpen)}>
+        <div className="flex flex-col leading-tight">
+          <span className="text-gray-800 text-sm font-medium">{isLoadingUser ? "Loading..." : userData.name}</span>
+          <p className="text-gray-500 text-xs">{isLoadingUser ? "..." : userData.user_type}</p>
+        </div>
 
-              {isUserOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
-                  {/* Menu items */}
-                  <div className="py-2">
-                    <Link
-                      to="/profile"
-                      className={`flex items-center gap-3 px-4 py-3 text-sm transition-all duration-200 ${
-                        activeLink === "/profile"
-                          ? "text-blue-600 bg-blue-50 font-medium border-l-3 border-blue-500"
-                          : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                      }`}
-                      onClick={() => {
-                        handleLinkClick("/profile")
-                        closeUserMenu()
-                      }}
-                    >
-                      <UserCircle size={18} className="text-gray-500" />
-                      <span>User Profile</span>
-                    </Link>
+        {/* Up/Down Arrow */}
+        <div className={`transition-transform duration-200 ease-in-out ${isUserOpen ? "rotate-180" : "rotate-0"}`}>
+          <ChevronDown size={16} className="text-gray-500 hover:text-gray-700" />
+        </div>
+      </div>
 
-                    {/* Separator line */}
-                    <div className="mx-4 my-2 border-t border-gray-200"></div>
+      {isUserOpen && (
+        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-in slide-in-from-top-2 duration-200">
+          {/* Menu items */}
+          <div className="py-2">
+            <Link
+              to="/profile"
+              className={`flex items-center gap-3 px-4 py-3 text-sm transition-all duration-200 ${
+                activeLink === "/profile"
+                  ? "text-blue-600 bg-blue-50 font-medium border-l-3 border-blue-500"
+                  : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
+              }`}
+              onClick={() => {
+                handleLinkClick("/profile")
+                closeUserMenu()
+              }}
+            >
+              <UserCircle size={18} className="text-gray-500" />
+              <span>User Profile</span>
+            </Link>
 
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
-                    >
-                      <LogOut size={18} className="text-red-500 group-hover:text-red-600" />
-                      <span className="font-medium">Logout</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Separator line */}
+            <div className="mx-4 my-2 border-t border-gray-200"></div>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
+            >
+              <LogOut size={18} className="text-red-500 group-hover:text-red-600" />
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
           </div>
         </nav>
 
+        {/* <div className="flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto p-6">{children}</div>
+        </div> */}
         {/* Page content with proper margin */}
         <div
           className={`
-            flex-1 pt-16 transition-all duration-300 ease-in-out
+           flex-1 pt-16 transition-all duration-300 ease-in-out overflow-hidden
             ${isMobile ? "ml-0" : isOpen ? "ml-64" : "ml-16"}
           `}
         >
@@ -712,4 +723,9 @@ function Navbar({ children }) {
 }
 
 export default Navbar
+
+
+
+
+
 
