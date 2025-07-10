@@ -1,0 +1,18 @@
+<svg width="100" height="100" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bubbleGradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a0c4ff"/>
+      <stop offset="100%" stop-color="#3a86ff"/>
+    </linearGradient>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M8 10C8 7.79086 9.79086 6 12 6H52C54.2091 6 56 7.79086 56 10V38C56 40.2091 54.2091 42 52 42H24L12 54V42H12C9.79086 42 8 40.2091 8 38V10Z" fill="url(#bubbleGradient)" />
+  </g>
+  <defs>
+    <filter id="shadow" x="0" y="0" width="70" height="70" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feOffset dx="2" dy="2" />
+      <feGaussianBlur stdDeviation="2" />
+      <feBlend in="SourceGraphic" in2="blur" mode="normal" />
+    </filter>
+  </defs>
+</svg>

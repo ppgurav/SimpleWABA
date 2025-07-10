@@ -405,7 +405,7 @@ function Navbar({ children }) {
         onClick={toggleSidebar}
         aria-label="Toggle sidebar"
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        {isOpen ? <Menu size={20} /> : <Menu size={20} />}
       </button>
 
       <div
@@ -421,13 +421,21 @@ function Navbar({ children }) {
           <div className={`${!isOpen ? "hidden" : "block"}`}>
             <img src="/waba logo 18-04-2025 (1).svg" className="block h-32 w-screen object-contain" alt="Logo" />
           </div>
-          <button
+          {/* <button
             onClick={toggleSidebar}
             className={`p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors ${!isOpen ? "mt-2" : ""}`}
             aria-label="Toggle sidebar"
           >
-            <Menu size={18} className="text-gray-600" />
-          </button>
+            <Menu size={18} className="text-gray-600 " />
+          </button> */}
+  <button
+  onClick={toggleSidebar}
+  className={`hidden md:block p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors ${!isOpen ? "mt-2" : ""}`}
+  aria-label="Toggle sidebar"
+>
+  <Menu size={18} className="text-gray-600" />
+</button>
+
         </div>
 
         <nav className={`flex-1 overflow-y-auto space-y-6 ${isOpen ? "p-4" : "p-2"}`}>
