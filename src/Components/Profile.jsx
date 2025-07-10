@@ -21,7 +21,7 @@ export default function ProfilePage() {
   const [isLoadingUser, setIsLoadingUser] = useState(true)
   const [apiError, setApiError] = useState("")
 
-  // Fetch user profile data on component mount
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
         const data = await response.json()
 
         if (data.success) {
-          // Map API response to form data
+         
           setFormData({
             fullName: data.name || "",
             email: data.email || "",

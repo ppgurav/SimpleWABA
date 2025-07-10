@@ -302,7 +302,6 @@ const Dashboard = () => {
       <div className="flex flex-col lg:flex-row">
 
         <div className="flex-1 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-          {/* Welcome Header */}
           <div className="mb-6 sm:mb-8">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold mb-2 sm:mb-4 text-gray-800 leading-tight">
               Welcome Back, {userProfile?.verified_name || "Demo"} 👋
@@ -346,7 +345,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Total Received Card */}
+   
             <div className="bg-gradient-to-br from-green-50 to-white p-4 sm:p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer">
               <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div className="bg-green-100 text-green-600 p-2 rounded-lg animate-pulse">
@@ -363,7 +362,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Total Templates Card */}
             <div className="bg-gradient-to-br from-orange-50 to-white p-4 sm:p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer">
               <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div className="bg-orange-100 text-orange-500 p-2 rounded-lg animate-pulse">
@@ -381,7 +379,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Message Statistics Section */}
+
           <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">Message Statistics</h2>
@@ -400,7 +398,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Statistics Table */}
+
             <div className="overflow-x-auto -mx-4 sm:mx-0">
               {stats?.monthlyStats?.length > 0 ? (
                 <div className="min-w-full">
@@ -444,9 +442,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Account Overview Sidebar */}
         <div className="w-full lg:w-80 xl:w-96 bg-white shadow-lg lg:shadow-md p-4 sm:p-6 lg:min-h-screen lg:border-l border-gray-200 mt-4 lg:mt-0 mx-4 lg:mx-0 rounded-2xl lg:rounded-none lg:rounded-l-2xl">
-          {/* Header */}
+     
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-gray-800">Account Overview</h2>
             <Pencil
@@ -455,7 +452,7 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Profile Section */}
+  
           <div className="flex flex-col items-center mb-6">
             <img
               src={
@@ -468,7 +465,7 @@ const Dashboard = () => {
             />
           </div>
 
-          {/* Profile Information */}
+
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 sm:p-5 rounded-lg shadow-sm border border-gray-100">
               <div className="font-medium text-gray-800">{userProfile?.verified_name || "Technfest"}</div>
