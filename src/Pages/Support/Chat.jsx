@@ -2659,7 +2659,7 @@ function Chat() {
     setShouldScrollToBottom(true)
     setIsNearBottom(true)
 
-    // Fetch messages for the selected user
+
     if (user.waId) {
       const { messages, hasMore } = await fetchUserMessages(user.waId, 1, false)
       const updatedUser = { ...user, messages: messages.reverse() }
