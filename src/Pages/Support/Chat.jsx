@@ -3257,7 +3257,7 @@ function Chat() {
                     </button>
                     {isOpen && (
                       <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg border p-2 w-40 sm:w-48 z-50 space-y-2">
-                        {/* Image Upload */}
+  
                         <button
                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
                           onClick={() => imageInputRef.current?.click()}
