@@ -3273,7 +3273,7 @@ function Chat() {
                           className="hidden"
                           onChange={(e) => handleFileSend(e, "image")}
                         />
-                        {/* Video Upload */}
+
                         <button
                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
                           onClick={() => videoInputRef.current?.click()}
