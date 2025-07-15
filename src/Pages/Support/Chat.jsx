@@ -1,3 +1,1705 @@
+// "use client"
+
+// import {
+//   Mic,
+//   Menu,
+//   X,
+//   Info,
+//   Plus,
+//   Phone,
+//   Calendar,
+//   MessageSquareTextIcon,
+//   Clock,
+//   Download,
+//   FileMinus,
+//   Check,
+//   CheckCheck,
+//   PaperclipIcon,
+//   ImageIcon,
+//   VideoIcon,
+//   FileIcon,
+//   ChevronDown,
+// } from "lucide-react"
+// import { useState, useEffect, useRef } from "react"
+// import axios from "axios"
+
+// const BASE_URL = "https://waba.mpocket.in"
+
+// const MessageType = {
+//   TEXT: "text",
+//   TEXT_WITH_BUTTON: "text_with_button",
+//   IMAGE: "image",
+//   DOCUMENT: "document",
+//   AUDIO: "audio",
+//   VIDEO: "video",
+//   CONTACT: "contact",
+//   LIST: "list",
+//   LOCATION: "location",
+//   STICKER: "sticker",
+//   REACTION: "reaction",
+//   musicUrl: "Music",
+//   TEMPLATE: "template",
+//   INTERACTIVE: "interactive",
+// }
+
+// const MessageStatus = {
+//   SENDING: "sending",
+//   SENT: "sent",
+//   DELIVERED: "delivered",
+//   READ: "read",
+//   FAILED: "failed",
+// }
+
+// const MessageTicks = ({ status, timestamp }) => {
+//   const renderTicks = () => {
+//     switch (status) {
+//       case MessageStatus.SENT:
+//         return (
+//           <div className="flex items-center gap-1">
+//             <span className="text-xs text-gray-500">{timestamp}</span>
+//             <Check size={12} className="text-gray-400" />
+//           </div>
+//         )
+//       case MessageStatus.DELIVERED:
+//         return (
+//           <div className="flex items-center gap-1 justify-end">
+//             <span className="text-xs text-gray-500">{timestamp}</span>
+//             <div className="relative w-4 h-4">
+//               <CheckCheck size={12} className="absolute left-0 top-0 text-gray-400" />
+//             </div>
+//           </div>
+//         )
+//       case MessageStatus.READ:
+//         return (
+//           <div className="flex items-center gap-1 justify-end">
+//             <span className="text-xs text-gray-500">{timestamp}</span>
+//             <div className="relative w-4 h-4">
+//               <CheckCheck size={12} className="absolute left-0 top-0 text-blue-400" />
+//             </div>
+//           </div>
+//         )
+//       case MessageStatus.SENDING:
+//         return (
+//           <div className="flex items-center gap-1">
+//             <span className="text-xs text-gray-500">{timestamp}</span>
+//             <Check size={12} className="text-gray-400" />
+//           </div>
+//         )
+//       case MessageStatus.FAILED:
+//         return (
+//           <div className="flex items-center gap-1">
+//             <X size={12} className="text-red-500" />
+//             <span className="text-xs text-red-500">Failed</span>
+//           </div>
+//         )
+//       default:
+//         return (
+//           <div className="flex items-center gap-1">
+//             <span className="text-xs text-gray-500">{timestamp}</span>
+//           </div>
+//         )
+//     }
+//   }
+
+//   return <div className="mt-1 text-left">{renderTicks()}</div>
+// }
+
+// const STORAGE_KEY = "whatsapp_chat_messages"
+// const USER_STORAGE_KEY = "whatsapp_chat_users"
+
+// const saveMessagesToStorage = (userList) => {
+//   try {
+//     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userList))
+//   } catch (error) {
+//     console.error("Failed to save messages to localStorage:", error)
+//   }
+// }
+
+// const loadMessagesFromStorage = () => {
+//   try {
+//     const stored = localStorage.getItem(USER_STORAGE_KEY)
+//     return stored ? JSON.parse(stored) : []
+//   } catch (error) {
+//     console.error("Failed to load messages from localStorage:", error)
+//     return []
+//   }
+// }
+
+// // Date helper functions
+// const isToday = (date) => {
+//   const today = new Date()
+//   const messageDate = new Date(date)
+//   return (
+//     messageDate.getDate() === today.getDate() &&
+//     messageDate.getMonth() === today.getMonth() &&
+//     messageDate.getFullYear() === today.getFullYear()
+//   )
+// }
+
+// const isYesterday = (date) => {
+//   const yesterday = new Date()
+//   yesterday.setDate(yesterday.getDate() - 1)
+//   const messageDate = new Date(date)
+//   return (
+//     messageDate.getDate() === yesterday.getDate() &&
+//     messageDate.getMonth() === yesterday.getMonth() &&
+//     messageDate.getFullYear() === yesterday.getFullYear()
+//   )
+// }
+
+// const formatRemainingTime = (dateString) => {
+//   if (!dateString) return "No recent activity"
+//   try {
+//     const date = new Date(dateString)
+//     if (isYesterday(date)) {
+//       return "Yesterday"
+//     }
+//     if (isToday(date)) {
+//       return "Today"
+//     }
+//     const options = {
+//       weekday: "short",
+//       day: "2-digit",
+//       month: "short",
+//       year: "numeric",
+//     }
+//     return date.toLocaleDateString("en-GB", options)
+//   } catch (error) {
+//     return "Invalid date"
+//   }
+// }
+
+// const formatDateLabel = (date) => {
+//   const messageDate = new Date(date)
+//   if (isToday(messageDate)) {
+//     return "Today"
+//   }
+//   if (isYesterday(messageDate)) {
+//     return "Yesterday"
+//   }
+//   const options = {
+//     weekday: "short",
+//     day: "2-digit",
+//     month: "short",
+//     year: "numeric",
+//   }
+//   return messageDate.toLocaleDateString("en-GB", options)
+// }
+
+// const getMessageDate = (timestamp) => {
+//   try {
+//     let date
+//     if (typeof timestamp === "string" && timestamp.includes(":")) {
+//       date = new Date()
+//     } else {
+//       date = new Date(Number.parseInt(timestamp) * 1000)
+//     }
+//     return date.toDateString()
+//   } catch (error) {
+//     return new Date().toDateString()
+//   }
+// }
+
+// const groupMessagesByDate = (messages) => {
+//   const groups = {}
+//   messages.forEach((message, index) => {
+//     const dateKey = getMessageDate(message.timestamp)
+//     if (!groups[dateKey]) {
+//       groups[dateKey] = []
+//     }
+//     groups[dateKey].push({ ...message, originalIndex: index })
+//   })
+//   return groups
+// }
+
+// const DateSeparator = ({ date }) => (
+//   <div className="flex items-center justify-center my-2 sm:my-4">
+//     <div className="bg-white px-2 py-1 sm:px-3 sm:py-1 rounded-full shadow-sm border text-xs text-gray-600 font-medium">
+//       {formatDateLabel(date)}
+//     </div>
+//   </div>
+// )
+
+// const formatText = (text, messageType = "text") => {
+//   if (!text) return ""
+//   let formattedText = text.toString()
+//   formattedText = formattedText
+//     .replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>")
+//     .replace(/_([^_\n]+)_/g, "<em>$1</em>")
+//     .replace(/~([^~\n]+)~/g, "<del>$1</del>")
+//     .replace(
+//       /`([^`\n]+)`/g,
+//       '<code style="background-color: #f1f1f1; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>',
+//     )
+//     .replace(/\n/g, "<br>")
+//     .replace(/\\\*/g, "*")
+//     .replace(/\\_/g, "_")
+//     .replace(/\\~/g, "~")
+//     .replace(/\\`/g, "`")
+//   return formattedText
+// }
+
+// const TextMessage = ({ message, position }) => (
+//   <div
+//     className={`${
+//       position === "right"
+//         ? "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300"
+//         : "bg-gradient-to-br from-gray-50 to-gray-300 shadow-lg border border-gray-300"
+//     } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm self-start relative text-sm sm:text-base`}
+//   >
+//     <div
+//       dangerouslySetInnerHTML={{ __html: formatText(message.text, "text") }}
+//       className="whitespace-pre-wrap break-words"
+//     />
+//     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+//     {position === "left" && message.timestamp && (
+//       <div className="text-xs text-gray-500 mt-1 text-right opacity-75">{message.timestamp}</div>
+//     )}
+//   </div>
+// )
+
+// const ImageMessage = ({ message, position }) => (
+//   <div
+//     className={`${
+//       position === "right"
+//         ? "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300"
+//         : "bg-gradient-to-br from-gray-50 to-gray-300 shadow-lg border border-gray-300"
+//     } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm self-start relative`}
+//   >
+//     <img
+//       src={message.imageUrl || message.mediaUrl || "/placeholder.svg?height=240&width=240"}
+//       alt={message.caption || "Shared image"}
+//       className="rounded-md mb-2 w-full max-w-[240px] h-48 sm:h-60 object-cover"
+//       onError={(e) => {
+//         e.target.src = "/placeholder.svg?height=240&width=240"
+//       }}
+//     />
+//     {message.caption && (
+//       <div
+//         dangerouslySetInnerHTML={{ __html: formatText(message.caption, "image") }}
+//         className={`text-sm ${position === "right" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
+//       />
+//     )}
+//     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+//     {position === "left" && message.timestamp && (
+//       <div className="text-xs text-gray-500 mt-1 text-right opacity-75">{message.timestamp}</div>
+//     )}
+//   </div>
+// )
+
+// const DocumentMessage = ({ message, position }) => (
+//   <div
+//     className={`${
+//       position === "right"
+//         ? "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300"
+//         : "bg-gradient-to-br from-gray-50 to-gray-300 shadow-lg border border-gray-300"
+//     } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm self-start relative`}
+//   >
+//     <div className="bg-white border border-gray-200 rounded-md p-2 mb-2 flex items-center">
+//       <div className="p-2 rounded-md mr-2">
+//         <FileMinus size={18} className="text-blue-600" />
+//       </div>
+//       <div className="flex-1 min-w-0">
+//         <p className="text-sm font-medium truncate">{message.documentName || message.fileName || "Document"}</p>
+//         <p className="text-xs text-gray-500">{message.documentSize || "Unknown size"}</p>
+//       </div>
+//       <a
+//         href={message.documentUrl || message.mediaUrl}
+//         className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
+//         download
+//       >
+//         <Download size={16} />
+//       </a>
+//     </div>
+//     {message.caption && (
+//       <div
+//         dangerouslySetInnerHTML={{ __html: formatText(message.caption, "document") }}
+//         className={`text-sm ${position === "right" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
+//       />
+//     )}
+//     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+//     {position === "left" && message.timestamp && (
+//       <div className="text-xs text-gray-500 mt-1 text-right opacity-75">{message.timestamp}</div>
+//     )}
+//   </div>
+// )
+
+// const VideoMessage = ({ message, position }) => (
+//   <div
+//     className={`${
+//       position === "right"
+//         ? "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300"
+//         : "bg-gradient-to-br from-gray-50 to-gray-300 shadow-lg border border-gray-300"
+//     } p-2 sm:p-3 rounded-xl self-start inline-flex flex-col relative max-w-[280px] sm:max-w-xs md:max-w-sm`}
+//   >
+//     <video
+//       src={message.videoUrl || message.mediaUrl || "#"}
+//       controls
+//       className="rounded-md mb-2 w-full max-h-48 sm:max-h-60 object-cover"
+//     >
+//       Your browser does not support the video tag.
+//     </video>
+//     {message.caption && (
+//       <div
+//         dangerouslySetInnerHTML={{ __html: formatText(message.caption, "video") }}
+//         className={`text-sm ${position === "right" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
+//       />
+//     )}
+//     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+//     {position === "left" && message.timestamp && (
+//       <div className="text-xs text-gray-500 mt-1 text-right">{message.timestamp}</div>
+//     )}
+//   </div>
+// )
+
+// const MessageRenderer = ({ message, position = "left", userList }) => {
+//   const Component = (() => {
+//     switch (message.type) {
+//       case MessageType.IMAGE:
+//         return ImageMessage
+//       case MessageType.DOCUMENT:
+//         return DocumentMessage
+//       case MessageType.VIDEO:
+//         return VideoMessage
+//       case MessageType.TEXT:
+//       default:
+//         return TextMessage
+//     }
+//   })()
+
+//   return (
+//     <div className={`flex ${position === "right" ? "justify-end" : "justify-start"} mb-2 sm:mb-3`}>
+//       <Component message={message} position={position} userList={userList} />
+//     </div>
+//   )
+// }
+
+// const generateMessageKey = (message, index, userId) => {
+//   const timestamp = message.timestamp || Date.now()
+//   const messageType = message.type || "text"
+//   const textPreview = message.text ? message.text.substring(0, 10) : ""
+//   const role = message.role || "user"
+//   const randomId = Math.random().toString(36).substr(2, 9)
+//   return `msg-${userId}-${timestamp}-${index}-${messageType}-${role}-${randomId}`.replace(/[^a-zA-Z0-9-]/g, "")
+// }
+
+// const generateUserKey = (user, index) => {
+//   const waId = user.waId || "no-wa-id"
+//   const userId = user.id || "no-id"
+//   const phone = user.phone || "no-phone"
+//   const randomId = Math.random().toString(36).substr(2, 9)
+//   return `user-${waId}-${userId}-${phone}-${index}-${randomId}`.replace(/[^a-zA-Z0-9-]/g, "")
+// }
+
+// function Chat() {
+//   const [selectedUser, setSelectedUser] = useState(null)
+//   const [userList, setUserList] = useState([])
+//   const [loading, setLoading] = useState(true)
+//   const [error, setError] = useState(null)
+//   const [newMessage, setNewMessage] = useState("")
+//   const [showSidebar, setShowSidebar] = useState(true)
+//   const [isMobile, setIsMobile] = useState(false)
+//   const [showInfoPanel, setShowInfoPanel] = useState(false)
+//   const [messageType, setMessageType] = useState(MessageType.TEXT)
+//   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false)
+//   const [searchTerm, setSearchTerm] = useState("")
+//   const [messagesLoading, setMessagesLoading] = useState(false)
+//   const [messagesError, setMessagesError] = useState(null)
+//   const [currentPage, setCurrentPage] = useState(1)
+//   const [hasMoreMessages, setHasMoreMessages] = useState(true)
+//   const [loadingMoreMessages, setLoadingMoreMessages] = useState(false)
+//   const messagesContainerRef = useRef(null)
+//   const [isScrolling, setIsScrolling] = useState(false)
+//   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
+//   const [isNearBottom, setIsNearBottom] = useState(true)
+//   const [isOpen, setIsOpen] = useState(false)
+//   const [messages, setMessages] = useState([])
+//   const [uploadingFile, setUploadingFile] = useState(false)
+//   const imageInputRef = useRef(null)
+//   const videoInputRef = useRef(null)
+//   const documentInputRef = useRef(null)
+//   const scrollTimeoutRef = useRef(null)
+
+//   // New states for popup functionality
+//   const [showPopup, setShowPopup] = useState(false)
+//   const [selectedOption, setSelectedOption] = useState("")
+//   const [showDropdown, setShowDropdown] = useState(false)
+//   const [dropdownContent, setDropdownContent] = useState("")
+
+//   // Dropdown options
+//   const dropdownOptions = [
+//     { value: "template1", label: "Welcome Template" },
+//     { value: "template2", label: "Thank You Template" },
+//     { value: "template3", label: "Follow Up Template" },
+//     { value: "custom", label: "Custom Message" },
+//   ]
+
+//   const toggleAttachmentMenu3 = () => setIsOpen((prev) => !prev)
+
+//   const handleFileSend = async (e, type) => {
+//     const file = e.target.files[0]
+//     if (!file) return
+
+//     setUploadingFile(true)
+//     try {
+//       // Validate selected user & phone number
+//       if (!selectedUser?.wa_id_or_sender) {
+//         alert("Please select a user to send message")
+//         e.target.value = null
+//         setUploadingFile(false)
+//         return
+//       }
+
+//       // let phoneNumber = selectedUser.wa_id_or_sender
+//       let phoneNumber = selectedUser.waId || selectedUser.phone || ""
+//       if (phoneNumber.startsWith("+")) phoneNumber = phoneNumber.slice(1)
+//       phoneNumber = phoneNumber.replace(/[^\d]/g, "")
+
+//       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+//       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
+
+//       // Upload file to server (S3)
+//       const formData = new FormData()
+//       formData.append("file", file)
+
+//       const uploadResponse = await fetch(`https://waba.mpocket.in/api/${wabaId}/upload-file`, {
+//         method: "POST",
+//         headers: {
+//           Authorization: `Bearer ${accessToken}`,
+//         },
+//         body: formData,
+//       })
+
+//       if (!uploadResponse.ok) {
+//         const err = await uploadResponse.json()
+//         alert(`Upload failed: ${err?.message || "Unknown error"}`)
+//         setUploadingFile(false)
+//         e.target.value = null
+//         return
+//       }
+
+//       const uploadResult = await uploadResponse.json()
+//       const uploadedUrl = uploadResult.data?.s3Url || uploadResult?.s3Url
+
+//       if (!uploadedUrl) {
+//         alert("Upload failed: No media URL returned")
+//         setUploadingFile(false)
+//         e.target.value = null
+//         return
+//       }
+
+//       // Prepare message body for WhatsApp send
+//       const mediaObject = {
+//         link: uploadedUrl,
+//       }
+
+//       if (type === "image" || type === "video") {
+//         mediaObject.caption = file.name
+//       }
+
+//       if (type === "document") {
+//         mediaObject.filename = file.name
+//       }
+
+//       const messageBody = {
+//         messaging_product: "whatsapp",
+//         to: phoneNumber,
+//         type,
+//         [type]: mediaObject,
+//       }
+
+//       // Send message API call
+//       const sendMessageResponse = await fetch(`https://waba.mpocket.in/api/${wabaId}/messages`, {
+//         method: "POST",
+//         headers: {
+//           Authorization: `Bearer ${accessToken}`,
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify(messageBody),
+//       })
+
+//       const sendMessageResult = await sendMessageResponse.json()
+
+//       if (!sendMessageResponse.ok || !sendMessageResult.messages?.length) {
+//         alert(
+//           `Send message failed: ${
+//             sendMessageResult?.error?.message || sendMessageResult?.message || JSON.stringify(sendMessageResult)
+//           }`,
+//         )
+//         setUploadingFile(false)
+//         e.target.value = null
+//         return
+//       }
+
+//       // Create message object for UI - FIXED: Proper structure for UI display
+//       const messageId = `file-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+//       const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+//       const newFileMessage = {
+//         id: messageId,
+//         type: type,
+//         text: type === "document" ? file.name : file.name || "",
+//         mediaUrl: uploadedUrl,
+//         imageUrl: type === "image" ? uploadedUrl : undefined,
+//         videoUrl: type === "video" ? uploadedUrl : undefined,
+//         documentUrl: type === "document" ? uploadedUrl : undefined,
+//         documentName: type === "document" ? file.name : undefined,
+//         fileName: file.name,
+//         caption: file.name,
+//         status: MessageStatus.SENT,
+//         timestamp: timestamp,
+//         role: "user",
+//         isRead: true,
+//         isLocalMessage: true,
+//         sentAt: Date.now(),
+//       }
+
+//       // Add message to UI - FIXED: Ensure proper state update
+//       const wasNearBottom = checkIfNearBottom()
+
+//       setUserList((prevUsers) => {
+//         const updatedUsers = prevUsers.map((user) =>
+//           user.id === selectedUser.id
+//             ? {
+//                 ...user,
+//                 messages: [...(user.messages || []), newFileMessage],
+//               }
+//             : user,
+//         )
+
+//         // Update selectedUser immediately
+//         const updatedSelectedUser = updatedUsers.find((user) => user.id === selectedUser.id)
+//         setSelectedUser(updatedSelectedUser)
+
+//         // Save to localStorage
+//         saveMessagesToStorage(updatedUsers)
+//         return updatedUsers
+//       })
+
+//       if (wasNearBottom) {
+//         setTimeout(() => {
+//           scrollToBottom(true)
+//         }, 100)
+//       }
+
+//       // Close attachment menu
+//       setIsOpen(false)
+//     } catch (error) {
+//       console.error("Error during upload/send:", error)
+//       alert("Network error during upload or send.")
+//     } finally {
+//       setUploadingFile(false)
+//       e.target.value = null
+//     }
+//   }
+
+//   // Load messages from localStorage on component mount
+//   useEffect(() => {
+//     const storedUsers = loadMessagesFromStorage()
+//     if (storedUsers.length > 0) {
+//       setUserList(storedUsers)
+//     }
+//   }, [])
+
+//   // Save messages to localStorage whenever userList changes
+//   useEffect(() => {
+//     if (userList.length > 0) {
+//       saveMessagesToStorage(userList)
+//     }
+//   }, [userList])
+
+//   const scrollToBottom = (smooth = true) => {
+//     if (scrollTimeoutRef.current) {
+//       clearTimeout(scrollTimeoutRef.current)
+//     }
+
+//     scrollTimeoutRef.current = setTimeout(() => {
+//       if (messagesContainerRef.current) {
+//         const container = messagesContainerRef.current
+//         const scrollOptions = {
+//           top: container.scrollHeight,
+//           behavior: smooth ? "smooth" : "auto",
+//         }
+//         container.scrollTo(scrollOptions)
+//       }
+//     }, 50)
+//   }
+
+//   const checkIfNearBottom = () => {
+//     if (messagesContainerRef.current) {
+//       const container = messagesContainerRef.current
+//       const threshold = 100
+//       const isNear = container.scrollHeight - container.scrollTop - container.clientHeight < threshold
+//       setIsNearBottom(isNear)
+//       return isNear
+//     }
+//     return false
+//   }
+
+//   const preserveScrollPosition = (previousScrollHeight) => {
+//     if (messagesContainerRef.current) {
+//       const container = messagesContainerRef.current
+//       const newScrollHeight = container.scrollHeight
+//       const scrollDifference = newScrollHeight - previousScrollHeight
+//       container.scrollTop = container.scrollTop + scrollDifference
+//     }
+//   }
+
+//   const parseContactName = (contactName) => {
+//     if (!contactName || contactName.trim() === "") {
+//       return { firstName: "Unknown", lastName: "User" }
+//     }
+
+//     const nameParts = contactName.trim().split(" ")
+//     if (nameParts.length === 1) {
+//       return { firstName: nameParts[0], lastName: "" }
+//     }
+
+//     return {
+//       firstName: nameParts[0],
+//       lastName: nameParts.slice(1).join(" "),
+//     }
+//   }
+
+//   const formatDate = (dateString) => {
+//     if (!dateString) return new Date().toLocaleString()
+//     try {
+//       const date = new Date(dateString)
+//       return date.toLocaleString()
+//     } catch (error) {
+//       return new Date().toLocaleString()
+//     }
+//   }
+
+//   const formatLastActivity = (dateString) => {
+//     if (!dateString) return new Date().toISOString().slice(0, 16)
+//     try {
+//       const date = new Date(dateString)
+//       return date.toISOString().slice(0, 16)
+//     } catch (error) {
+//       return new Date().toISOString().slice(0, 16)
+//     }
+//   }
+
+//   const formatTimestamp = (timestamp) => {
+//     try {
+//       const date = new Date(Number.parseInt(timestamp) * 1000)
+//       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+//     } catch (error) {
+//       return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+//     }
+//   }
+
+//   const transformApiMessage = async (apiMessage) => {
+//     const timestamp = formatTimestamp(apiMessage.timestamp)
+//     const isFromUser = apiMessage.sender !== null
+//     const role = isFromUser ? "assistant" : "user"
+//     const messageId = `${apiMessage.id || Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+//     switch (apiMessage.message_type) {
+//       case "text":
+//         return {
+//           id: messageId,
+//           type: MessageType.TEXT,
+//           text: apiMessage.message_body || "No message content",
+//           isRead: apiMessage.read === 1,
+//           role,
+//           timestamp,
+//           status: MessageStatus.read,
+//         }
+//       case "image":
+//         return {
+//           id: messageId,
+//           type: MessageType.IMAGE,
+//           imageUrl: apiMessage.file_url || apiMessage.url || "/placeholder.svg?height=240&width=240",
+//           mediaUrl: apiMessage.file_url || apiMessage.url,
+//           caption: apiMessage.message_body || "",
+//           isRead: apiMessage.read === 1,
+//           role,
+//           timestamp,
+//           status: MessageStatus.read,
+//         }
+//       case "document":
+//         return {
+//           id: messageId,
+//           type: MessageType.DOCUMENT,
+//           documentName: apiMessage.filename || "Document",
+//           documentSize: "Unknown size",
+//           documentUrl: apiMessage.file_url || "#",
+//           mediaUrl: apiMessage.file_url,
+//           caption: apiMessage.message_body || "",
+//           isRead: apiMessage.read === 1,
+//           role,
+//           timestamp,
+//           status: MessageStatus.read,
+//         }
+//       case "video":
+//         return {
+//           id: messageId,
+//           type: MessageType.VIDEO,
+//           videoUrl: apiMessage.file_url || "#",
+//           mediaUrl: apiMessage.file_url,
+//           caption: apiMessage.message_body || "",
+//           isRead: apiMessage.read === 1,
+//           role,
+//           timestamp,
+//           status: MessageStatus.read,
+//         }
+//       default:
+//         return {
+//           id: messageId,
+//           type: MessageType.TEXT,
+//           text: apiMessage.message_body || `${apiMessage.message_type} message`,
+//           isRead: apiMessage.read === 1,
+//           role,
+//           timestamp,
+//           status: MessageStatus.read,
+//         }
+//     }
+//   }
+
+//   const fetchUserMessages = async (userId, page = 1, isLoadMore = false) => {
+//     try {
+//       if (!isLoadMore) {
+//         setMessagesLoading(true)
+//         setMessagesError(null)
+//       } else {
+//         setLoadingMoreMessages(true)
+//       }
+
+//       const wabaId = sessionStorage.getItem("361462453714220") || "361462453714220"
+//       const accessToken =
+//         sessionStorage.getItem("Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7") ||
+//         "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+
+//       if (!wabaId || !accessToken) {
+//         throw new Error("Missing authentication data")
+//       }
+
+//       const response = await axios.get(`${BASE_URL}/api/phone/get/${wabaId}/${userId}/${page}`)
+//       console.log(`Messages API Response for page ${page}:`, response.data)
+
+//       const transformedMessages = Array.isArray(response.data)
+//         ? await Promise.all(response.data.map(transformApiMessage))
+//         : []
+
+//       const hasMore = transformedMessages.length > 0
+//       return { messages: transformedMessages, hasMore }
+//     } catch (error) {
+//       console.error(`Error fetching messages for page ${page}:`, error?.response?.data || error.message)
+//       if (!isLoadMore) {
+//         setMessagesError("Failed to load messages")
+//       }
+//       return { messages: [], hasMore: false }
+//     } finally {
+//       if (!isLoadMore) {
+//         setMessagesLoading(false)
+//       } else {
+//         setLoadingMoreMessages(false)
+//       }
+//     }
+//   }
+
+//   const loadMoreMessages = async () => {
+//     if (!selectedUser || !hasMoreMessages || loadingMoreMessages) return
+
+//     const container = messagesContainerRef.current
+//     if (!container) return
+
+//     const previousScrollHeight = container.scrollHeight
+//     const nextPage = currentPage + 1
+
+//     const { messages: newMessages, hasMore } = await fetchUserMessages(selectedUser.wa_id_or_sender, nextPage, true)
+
+//     if (newMessages.length > 0) {
+//       const updatedUser = {
+//         ...selectedUser,
+//         messages: [...newMessages.reverse(), ...selectedUser.messages],
+//       }
+
+//       setSelectedUser(updatedUser)
+
+//       const updatedUsers = userList.map((u) => (u.id === selectedUser.id ? updatedUser : u))
+//       setUserList(updatedUsers)
+//       setCurrentPage(nextPage)
+
+//       setTimeout(() => {
+//         preserveScrollPosition(previousScrollHeight)
+//       }, 50)
+//     }
+
+//     setHasMoreMessages(hasMore)
+//   }
+
+//   const handleScroll = () => {
+//     if (!messagesContainerRef.current || loadingMoreMessages || !hasMoreMessages) return
+
+//     const container = messagesContainerRef.current
+//     const scrollTop = container.scrollTop
+//     const scrollThreshold = 100
+
+//     checkIfNearBottom()
+
+//     if (scrollTop <= scrollThreshold && !isScrolling) {
+//       setIsScrolling(true)
+//       loadMoreMessages().finally(() => {
+//         setTimeout(() => setIsScrolling(false), 1000)
+//       })
+//     }
+//   }
+
+//   useEffect(() => {
+//     const container = messagesContainerRef.current
+//     if (container) {
+//       container.addEventListener("scroll", handleScroll)
+//       return () => container.removeEventListener("scroll", handleScroll)
+//     }
+//   }, [selectedUser?.wa_id_or_sender, hasMoreMessages, loadingMoreMessages, isScrolling, currentPage])
+
+//   useEffect(() => {
+//     if (selectedUser && selectedUser.messages && shouldScrollToBottom && isNearBottom) {
+//       scrollToBottom(false)
+//     }
+//   }, [selectedUser, shouldScrollToBottom, isNearBottom])
+
+//   // Merge local messages with API messages
+//   const mergeMessages = (apiMessages, localMessages) => {
+//     const merged = [...apiMessages]
+
+//     // Add local messages that are not in API response
+//     localMessages.forEach((localMsg) => {
+//       if (localMsg.isLocalMessage) {
+//         // Check if this local message is already in API response
+//         const existsInApi = apiMessages.some(
+//           (apiMsg) =>
+//             apiMsg.type === localMsg.type && Math.abs(new Date(apiMsg.timestamp).getTime() - localMsg.sentAt) < 60000, // Within 1 minute
+//         )
+
+//         if (!existsInApi) {
+//           merged.push(localMsg)
+//         }
+//       }
+//     })
+
+//     // Sort by timestamp
+//     return merged.sort((a, b) => {
+//       const timeA = a.sentAt || new Date(a.timestamp).getTime()
+//       const timeB = b.sentAt || new Date(b.timestamp).getTime()
+//       return timeA - timeB
+//     })
+//   }
+
+//   const fetchChats = async () => {
+//     try {
+//       setLoading(true)
+//       setError(null)
+
+//       const wabaId = sessionStorage.getItem("361462453714220") || "361462453714220"
+//       const accessToken =
+//         sessionStorage.getItem("Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7") ||
+//         "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+
+//       if (!wabaId || !accessToken) {
+//         console.error("Missing waba_id or auth_token in sessionStorage")
+//         throw new Error("Missing authentication data")
+//       }
+
+//       const response = await axios.get(`${BASE_URL}/api/phone/get/chats/${wabaId}?accessToken=${accessToken}`)
+//       console.log("API Response:", response.data)
+
+//       const transformedData = Array.isArray(response.data)
+//         ? response.data.map((chat, index) => {
+//             const { firstName, lastName } = parseContactName(chat.contact_name)
+//             return {
+//               id: chat.User_ID || index + 1,
+//               firstName: firstName,
+//               lastName: lastName,
+//               profileImage: `${firstName.charAt(0)}${lastName.charAt(0)}`,
+//               source: "WhatsApp",
+//               creationTime: formatDate(chat.first_message_date),
+//               lastActivity: formatLastActivity(chat.last_message_date),
+//               phone: chat.wa_id_or_sender || "+1234567890",
+//               notes: "",
+//               messageCount: chat.message_count || 0,
+//               totalPages: chat.total_pages || 0,
+//               activeLast24Hours: chat.active_last_24_hours || false,
+//               remainingTime: formatRemainingTime(chat.last_message_date),
+//               userName: chat.user_name || "Unknown",
+//               waId: chat.wa_id_or_sender,
+//               wa_id_or_sender: chat.wa_id_or_sender, // FIXED: Added this field
+//               messages: [],
+//             }
+//           })
+//         : []
+
+//       console.log("Transformed Data:", transformedData)
+
+//       // Merge with stored messages - FIXED: Preserve local messages
+//       const storedUsers = loadMessagesFromStorage()
+//       const mergedUsers = transformedData.map((apiUser) => {
+//         const storedUser = storedUsers.find((stored) => stored.wa_id_or_sender === apiUser.wa_id_or_sender)
+//         if (storedUser && storedUser.messages) {
+//           // Keep local messages, especially those marked as isLocalMessage
+//           return {
+//             ...apiUser,
+//             messages: storedUser.messages.filter((msg) => msg.isLocalMessage || !msg.isLocalMessage),
+//           }
+//         }
+//         return apiUser
+//       })
+
+//       setUserList(mergedUsers)
+//     } catch (error) {
+//       console.error("Error fetching chats:", error?.response?.data || error.message)
+//       setError("Failed to load chats. Please try again.")
+
+//       // Load from localStorage as fallback
+//       const storedUsers = loadMessagesFromStorage()
+//       if (storedUsers.length > 0) {
+//         setUserList(storedUsers)
+//       } else {
+//         setUserList([
+//           {
+//             id: 1,
+//             firstName: "Demo",
+//             lastName: "User",
+//             profileImage: "DU",
+//             source: "Source Web",
+//             creationTime: "Mar 20, 2025, 10:54:16 PM",
+//             lastActivity: "2025-04-11 14:30",
+//             phone: "+1234567890",
+//             notes: "",
+//             waId: "918857808284",
+//             wa_id_or_sender: "918857808284", // FIXED: Added this field
+//             messages: [
+//               {
+//                 id: "demo-msg-1",
+//                 type: MessageType.TEXT,
+//                 text: "*API connection failed.* This is _demo data_ with ~formatting~ and `code`.\n\nNew line test.",
+//                 isRead: true,
+//                 timestamp: "10:30 AM",
+//                 role: "assistant",
+//                 status: MessageStatus.read,
+//               },
+//             ],
+//           },
+//         ])
+//       }
+//     } finally {
+//       setLoading(false)
+//     }
+//   }
+
+//   useEffect(() => {
+//     fetchChats()
+//   }, [])
+
+//   useEffect(() => {
+//     const checkScreenSize = () => {
+//       const mobile = window.innerWidth < 768
+//       setIsMobile(mobile)
+//       setShowSidebar(!mobile || !selectedUser ? true : false)
+//     }
+
+//     checkScreenSize()
+//     window.addEventListener("resize", checkScreenSize)
+//     return () => window.removeEventListener("resize", checkScreenSize)
+//   }, [selectedUser])
+
+//   const simulateMessageStatusUpdates = (messageId, userWaId) => {
+//     const updateMessageStatus = (status) => {
+//       setUserList((prevUsers) => {
+//         const newUsers = prevUsers.map((user) =>
+//           user.wa_id_or_sender === userWaId
+//             ? {
+//                 ...user,
+//                 messages: user.messages.map((msg) => (msg.id === messageId ? { ...msg, status } : msg)),
+//               }
+//             : user,
+//         )
+
+//         const updated = newUsers.find((u) => u.wa_id_or_sender === userWaId)
+//         setSelectedUser(updated)
+//         return newUsers
+//       })
+//     }
+
+//     setTimeout(() => updateMessageStatus(MessageStatus.SENT), 500)
+//     setTimeout(() => updateMessageStatus(MessageStatus.DELIVERED), 2000)
+//     setTimeout(() => updateMessageStatus(MessageStatus.READ), 5000)
+//   }
+
+//   const handleSendMessage = async () => {
+//     if (!newMessage.trim()) return
+
+//     const messageId = `new-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+//     const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+
+//     const newMsg = {
+//       id: messageId,
+//       type: MessageType.TEXT,
+//       text: newMessage,
+//       isRead: true,
+//       role: "user",
+//       timestamp,
+//       status: MessageStatus.SENDING,
+//       isLocalMessage: true,
+//       sentAt: Date.now(),
+//     }
+
+//     // Add message to UI immediately with "sending" status
+//     const wasNearBottom = checkIfNearBottom()
+
+//     const updatedUsers = userList.map((user) =>
+//       user.id === selectedUser.id
+//         ? {
+//             ...user,
+//             messages: [...user.messages, newMsg],
+//           }
+//         : user,
+//     )
+
+//     setUserList(updatedUsers)
+//     const updatedUser = updatedUsers.find((user) => user.id === selectedUser.id)
+//     setSelectedUser(updatedUser)
+
+//     if (wasNearBottom) {
+//       setTimeout(() => {
+//         scrollToBottom(true)
+//       }, 100)
+//     }
+
+//     // Clear input
+//     setNewMessage("")
+
+//     try {
+//       const accessToken =
+//         sessionStorage.getItem("Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7") ||
+//         "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+//       const wabaId = sessionStorage.getItem("361462453714220") || "361462453714220"
+
+//       let phoneNumber = selectedUser.wa_id_or_sender || ""
+//       if (phoneNumber.startsWith("+")) {
+//         phoneNumber = phoneNumber.substring(1)
+//       }
+//       phoneNumber = phoneNumber.replace(/[^\d]/g, "")
+
+//       console.log("Sending message to:", phoneNumber)
+//       console.log("Message body:", newMessage)
+
+//       const requestBody = {
+//         messaging_product: "whatsapp",
+//         to: phoneNumber,
+//         type: "text",
+//         text: {
+//           body: newMessage,
+//         },
+//       }
+
+//       console.log("Request body:", JSON.stringify(requestBody, null, 2))
+
+//       const res = await fetch(`https://waba.mpocket.in/api/${wabaId}/messages`, {
+//         method: "POST",
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${accessToken}`,
+//         },
+//         body: JSON.stringify(requestBody),
+//       })
+
+//       console.log("Response status:", res.status)
+
+//       if (!res.ok) {
+//         const errorText = await res.text()
+//         console.error("API Error Response:", errorText)
+//         throw new Error(`Failed to send message: ${res.status} - ${errorText}`)
+//       } else {
+//         const result = await res.json()
+//         console.log("API success:", result)
+//       }
+
+//       // Start status simulation after successful API call
+//       simulateMessageStatusUpdates(messageId, selectedUser.wa_id_or_sender)
+//     } catch (error) {
+//       console.error("API Error:", error.message)
+
+//       // Update message status to failed
+//       setUserList((prevUsers) =>
+//         prevUsers.map((user) =>
+//           user.wa_id_or_sender === selectedUser.wa_id_or_sender
+//             ? {
+//                 ...user,
+//                 messages: user.messages.map((msg) =>
+//                   msg.id === messageId ? { ...msg, status: MessageStatus.FAILED } : msg,
+//                 ),
+//               }
+//             : user,
+//         ),
+//       )
+
+//       alert(`Failed to send message: ${error.message}`)
+//       return
+//     }
+//   }
+
+//   const handleUserSelect = async (user) => {
+//     setSelectedUser(user)
+//     if (isMobile) setShowSidebar(false)
+//     setCurrentPage(1)
+//     setHasMoreMessages(true)
+//     setShouldScrollToBottom(true)
+//     setIsNearBottom(true)
+
+//     if (user.wa_id_or_sender) {
+//       const { messages, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
+
+//       // Merge API messages with local messages
+//       const localMessages = user.messages || []
+//       const mergedMessages = mergeMessages(messages.reverse(), localMessages)
+
+//       const updatedUser = { ...user, messages: mergedMessages }
+//       setSelectedUser(updatedUser)
+//       setHasMoreMessages(hasMore)
+
+//       const updatedUsers = userList.map((u) => (u.id === user.id ? updatedUser : u))
+//       setUserList(updatedUsers)
+//     }
+//   }
+
+//   const handleBackToList = () => {
+//     if (isMobile) setShowSidebar(true)
+//   }
+
+//   const toggleInfoPanel = () => setShowInfoPanel((prev) => !prev)
+
+//   const toggleAttachmentMenu = () => setShowAttachmentMenu((prev) => !prev)
+
+//   // New popup functions
+//   const handlePlusClick = () => {
+//     setShowPopup(true)
+//     setSelectedOption("")
+//     setDropdownContent("")
+//     setShowDropdown(false)
+//   }
+
+//   const handlePopupCancel = () => {
+//     setShowPopup(false)
+//     setSelectedOption("")
+//     setDropdownContent("")
+//     setShowDropdown(false)
+//   }
+
+//   const handlePopupSend = () => {
+//     if (selectedOption && dropdownContent) {
+//       // Here you can handle sending the selected template or custom message
+//       console.log("Sending:", { option: selectedOption, content: dropdownContent })
+//       alert(`Sending: ${selectedOption} with content: ${dropdownContent}`)
+//     }
+//     setShowPopup(false)
+//     setSelectedOption("")
+//     setDropdownContent("")
+//     setShowDropdown(false)
+//   }
+
+//   const handleDropdownSelect = (option) => {
+//     setSelectedOption(option.value)
+//     setShowDropdown(true)
+
+//     // Set content based on selection
+//     switch (option.value) {
+//       case "template1":
+//         setDropdownContent("Welcome to our service! We're glad to have you.")
+//         break
+//       case "template2":
+//         setDropdownContent("Thank you for your business. We appreciate your support!")
+//         break
+//       case "template3":
+//         setDropdownContent("Following up on our previous conversation. How can we help you further?")
+//         break
+//       case "custom":
+//         setDropdownContent("Enter your custom message here...")
+//         break
+//       default:
+//         setDropdownContent("")
+//     }
+//   }
+
+//   useEffect(() => {
+//     const handleClickOutside = (event) => {
+//       if (isOpen && !event.target.closest(".attachment-menu-container")) {
+//         setIsOpen(false)
+//       }
+//     }
+//     document.addEventListener("mousedown", handleClickOutside)
+//     return () => document.removeEventListener("mousedown", handleClickOutside)
+//   }, [isOpen])
+
+//   // Cleanup scroll timeout on unmount
+//   useEffect(() => {
+//     return () => {
+//       if (scrollTimeoutRef.current) {
+//         clearTimeout(scrollTimeoutRef.current)
+//       }
+//     }
+//   }, [])
+
+//   if (loading) {
+//     return (
+//       <div className="flex h-screen bg-gray-100 p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 pt-16 sm:pt-20">
+//         <div className="flex items-center justify-center w-full">
+//           <div className="text-center">
+//             <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+//             <p className="text-gray-600 text-sm sm:text-base">Loading chats...</p>
+//           </div>
+//         </div>
+//       </div>
+//     )
+//   }
+
+//   if (error) {
+//     return (
+//       <div className="flex h-screen bg-gray-100 p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 pt-16 sm:pt-20">
+//         <div className="flex items-center justify-center w-full">
+//           <div className="text-center">
+//             <p className="text-red-600 mb-4 text-sm sm:text-base">{error}</p>
+//             <button
+//               onClick={fetchChats}
+//               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 text-sm sm:text-base"
+//             >
+//               Retry
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+//     )
+//   }
+
+//   return (
+//     <div className="flex h-screen bg-gray-100 p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 pt-16 sm:pt-20">
+//       {/* Popup Modal */}
+//       {showPopup && (
+//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+//           <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw] shadow-xl">
+//             <h3 className="text-lg font-semibold mb-4">Select Template</h3>
+
+//             {/* Dropdown */}
+//             <div className="mb-4">
+//               <label className="block text-sm font-medium text-gray-700 mb-2">Choose Template</label>
+//               <div className="relative">
+//                 <select
+//                   value={selectedOption}
+//                   onChange={(e) => {
+//                     const option = dropdownOptions.find((opt) => opt.value === e.target.value)
+//                     if (option) handleDropdownSelect(option)
+//                   }}
+//                   className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+//                 >
+//                   <option value="">Select an option...</option>
+//                   {dropdownOptions.map((option) => (
+//                     <option key={option.value} value={option.value}>
+//                       {option.label}
+//                     </option>
+//                   ))}
+//                 </select>
+//                 <ChevronDown
+//                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+//                   size={20}
+//                 />
+//               </div>
+//             </div>
+
+//             {/* Content area that shows when dropdown is selected */}
+//             {showDropdown && (
+//               <div className="mb-4">
+//                 <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label>
+//                 <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
+//                   <div className="mb-3">
+//                     <div className="bg-white p-3 rounded border border-gray-300">
+//                       <h4 className="font-medium text-sm text-gray-800 mb-2">Preview:</h4>
+//                       <p className="text-sm text-gray-600">{dropdownContent}</p>
+//                     </div>
+//                   </div>
+//                   <div>
+//                     <div className="bg-white p-3 rounded border border-gray-300">
+//                       <h4 className="font-medium text-sm text-gray-800 mb-2">Edit Content:</h4>
+//                       <textarea
+//                         value={dropdownContent}
+//                         onChange={(e) => setDropdownContent(e.target.value)}
+//                         className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
+//                         rows="3"
+//                         placeholder="Enter your message content..."
+//                       />
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             )}
+
+//             {/* Buttons */}
+//             <div className="flex justify-end gap-3">
+//               <button
+//                 onClick={handlePopupCancel}
+//                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 onClick={handlePopupSend}
+//                 disabled={!selectedOption || !dropdownContent}
+//                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+//               >
+//                 Send
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+
+//       <div
+//         className={`${
+//           showSidebar ? "flex" : "hidden"
+//         } md:flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden ${
+//           isMobile ? "w-full absolute inset-2 z-10" : "w-full md:w-1/3"
+//         }`}
+//       >
+//         <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+//           <div className="flex items-center justify-between gap-4">
+//             {isMobile && selectedUser && (
+//               <button onClick={() => setShowSidebar(false)} className="md:hidden text-gray-500 hover:text-gray-700">
+//                 <X size={20} />
+//               </button>
+//             )}
+//           </div>
+//           <div className="flex items-center gap-3">
+//             <Menu size={18} className="sm:w-5 sm:h-5" />
+//             <h1 className="text-base sm:text-lg font-semibold">Chat List</h1>
+//           </div>
+//           <div>
+//             <label className="block text-sm font-medium text-gray-700 mb-1 mt-4 sm:mt-6">Search</label>
+//             <input
+//               type="text"
+//               placeholder="Searching....."
+//               className="w-full p-2 border rounded-md text-sm sm:text-base"
+//               value={searchTerm}
+//               onChange={(e) => setSearchTerm(e.target.value)}
+//             />
+//           </div>
+//           <hr className="border-gray-300" />
+//         </div>
+
+//         <div className="overflow-y-auto px-3 sm:px-4 pb-4 space-y-2 sm:space-y-3 flex-1">
+//           {userList
+//             .filter((user) => {
+//               const fullName = `${user.firstName} ${user.lastName}`.toLowerCase()
+//               return fullName.includes(searchTerm.toLowerCase())
+//             })
+//             .map((user, index) => (
+//               <div
+//                 key={generateUserKey(user, index)}
+//                 onClick={() => handleUserSelect(user)}
+//                 className="flex justify-between items-start gap-2 sm:gap-3 cursor-pointer hover:bg-gray-100 p-2 rounded-md"
+//               >
+//                 <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+//                   <div className="relative">
+//                     <div
+//                       className={`${
+//                         user.activeLast24Hours ? "bg-green-600 text-white" : "bg-gray-400 text-black"
+//                       } w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold shrink-0`}
+//                     >
+//                       {user.firstName.charAt(0)}
+//                       {user.lastName.charAt(0)}
+//                     </div>
+//                     {user.activeLast24Hours && (
+//                       <span className="absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-500 border-2 border-white rounded-full" />
+//                     )}
+//                   </div>
+//                   <div className="flex flex-col min-w-0">
+//                     <div className="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
+//                       <p className="font-medium truncate max-w-[120px] sm:max-w-[140px] text-sm sm:text-base">
+//                         {user.firstName} {user.lastName}
+//                       </p>
+//                     </div>
+//                     <p className="text-xs sm:text-sm text-gray-500 truncate max-w-[150px] sm:max-w-[200px]">
+//                       {user.remainingTime}
+//                     </p>
+//                   </div>
+//                 </div>
+//                 <span className="text-xs sm:text-sm text-black whitespace-nowrap ml-1 sm:ml-2 shrink-0 mt-1">
+//                   {user.messageCount} message
+//                 </span>
+//               </div>
+//             ))}
+//         </div>
+//       </div>
+
+//       <div
+//         className={`${
+//           !showSidebar || !isMobile ? "flex" : "hidden"
+//         } md:flex flex-col bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden ${
+//           isMobile ? "w-full" : "w-full md:w-2/3"
+//         }`}
+//       >
+//         {selectedUser ? (
+//           <>
+//             <div className="flex items-center justify-between gap-2 sm:gap-4 border-b p-3 sm:p-4">
+//               <div className="flex items-center gap-2">
+//                 {isMobile && (
+//                   <button onClick={handleBackToList} className="md:hidden text-gray-500 hover:text-gray-700 mr-1">
+//                     <Menu size={20} />
+//                   </button>
+//                 )}
+//                 <div className="bg-gray-400 text-black w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold">
+//                   {selectedUser.firstName.charAt(0)}
+//                   {selectedUser.lastName.charAt(0)}
+//                 </div>
+//                 <h2 className="text-sm sm:text-base md:text-lg font-semibold">
+//                   {selectedUser.firstName} {selectedUser.lastName}
+//                 </h2>
+//               </div>
+//               <button onClick={toggleInfoPanel} className="text-gray-500 hover:text-blue-600">
+//                 <Info size={18} className="sm:w-5 sm:h-5" />
+//               </button>
+//             </div>
+
+//             <div
+//               ref={messagesContainerRef}
+//               className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3 bg-gray-200 text-left"
+//               style={{ scrollBehavior: "smooth" }}
+//             >
+//               {loadingMoreMessages && (
+//                 <div className="flex items-center justify-center py-4">
+//                   <div className="animate-spin rounded-full h-4 w-4 sm:h-6 sm:w-6 border-b-2 border-blue-500"></div>
+//                   <span className="ml-2 text-gray-600 text-xs sm:text-sm">Loading more messages...</span>
+//                 </div>
+//               )}
+
+//               {messagesLoading ? (
+//                 <div className="flex items-center justify-center py-8">
+//                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
+//                   <span className="ml-2 text-gray-600 text-sm sm:text-base">Loading messages...</span>
+//                 </div>
+//               ) : messagesError ? (
+//                 <div className="flex items-center justify-center py-8">
+//                   <p className="text-red-600 text-sm sm:text-base">{messagesError}</p>
+//                 </div>
+//               ) : selectedUser.messages.length === 0 ? (
+//                 <div className="flex items-center justify-center py-8">
+//                   <p className="text-gray-500 text-sm sm:text-base">No messages found</p>
+//                 </div>
+//               ) : (
+//                 selectedUser.messages.map((msg, index) => (
+//                   <div
+//                     key={generateMessageKey(msg, index, selectedUser.wa_id_or_sender || selectedUser.id)}
+//                     className="relative group"
+//                   >
+//                     <MessageRenderer
+//                       message={msg}
+//                       position={msg.role === "user" ? "right" : "left"}
+//                       userList={userList}
+//                     />
+//                   </div>
+//                 ))
+//               )}
+//             </div>
+
+//             <div className="p-2 sm:p-3 md:p-4 border-t flex flex-col gap-2">
+//               <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-full px-2 sm:px-3 py-1.5 sm:py-2">
+//                 <div className="flex items-center gap-1 sm:gap-2">
+//                   <div className="relative attachment-menu-container">
+//                     <button className="text-gray-500 hover:text-blue-600 p-2" onClick={handlePlusClick}>
+//                       <Plus size={18} className="sm:w-5 sm:h-5" />
+//                     </button>
+//                   </div>
+
+//                   <div className="relative inline-block text-left attachment-menu-container">
+//                     <button
+//                       className="text-gray-500 hover:text-blue-600 p-2"
+//                       onClick={toggleAttachmentMenu3}
+//                       disabled={uploadingFile}
+//                     >
+//                       <PaperclipIcon size={18} />
+//                     </button>
+//                     {isOpen && (
+//                       <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg border p-2 w-40 sm:w-48 z-50 space-y-2">
+//                         {/* Image Upload */}
+//                         <button
+//                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
+//                           onClick={() => imageInputRef.current?.click()}
+//                           disabled={uploadingFile}
+//                         >
+//                           <ImageIcon size={18} className="text-green-700" />
+//                           <span className="text-sm">Image</span>
+//                         </button>
+//                         <input
+//                           type="file"
+//                           accept="image/*"
+//                           ref={imageInputRef}
+//                           className="hidden"
+//                           onChange={(e) => handleFileSend(e, "image")}
+//                         />
+//                         {/* Video Upload */}
+//                         <button
+//                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
+//                           onClick={() => videoInputRef.current?.click()}
+//                           disabled={uploadingFile}
+//                         >
+//                           <VideoIcon size={18} className="text-red-700" />
+//                           <span className="text-sm">Video</span>
+//                         </button>
+//                         <input
+//                           type="file"
+//                           accept="video/*"
+//                           ref={videoInputRef}
+//                           className="hidden"
+//                           onChange={(e) => handleFileSend(e, "video")}
+//                         />
+//                         {/* Document Upload */}
+//                         <button
+//                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
+//                           onClick={() => documentInputRef.current?.click()}
+//                           disabled={uploadingFile}
+//                         >
+//                           <FileIcon size={18} className="text-blue-700" />
+//                           <span className="text-sm">Document</span>
+//                         </button>
+//                         <input
+//                           type="file"
+//                           accept=".pdf,.doc,.docx,.txt"
+//                           ref={documentInputRef}
+//                           className="hidden"
+//                           onChange={(e) => handleFileSend(e, "document")}
+//                         />
+//                       </div>
+//                     )}
+//                   </div>
+//                 </div>
+
+//                 <input
+//                   type="text"
+//                   value={newMessage}
+//                   onChange={(e) => setNewMessage(e.target.value)}
+//                   onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+//                   placeholder="Type your message..."
+//                   className="flex-1 border-0 outline-none px-2 sm:px-3 py-1 text-sm sm:text-base bg-transparent"
+//                 />
+
+//                 <div className="flex items-center gap-1 sm:gap-2">
+//                   <button className="text-gray-500 hover:text-blue-600 p-1">
+//                     <Mic size={18} className="sm:w-5 sm:h-5" />
+//                   </button>
+//                   <button
+//                     onClick={handleSendMessage}
+//                     className="bg-green-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-green-600"
+//                     disabled={uploadingFile}
+//                   >
+//                     <svg
+//                       xmlns="http://www.w3.org/2000/svg"
+//                       width="16"
+//                       height="16"
+//                       viewBox="0 0 24 24"
+//                       fill="none"
+//                       stroke="currentColor"
+//                       strokeWidth="2"
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                       className="sm:w-5 sm:h-5"
+//                     >
+//                       <line x1="22" y1="2" x2="11" y2="13"></line>
+//                       <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+//                     </svg>
+//                   </button>
+//                 </div>
+//               </div>
+//               {uploadingFile && (
+//                 <div className="flex items-center justify-center py-2">
+//                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+//                   <span className="ml-2 text-gray-600 text-sm">Uploading file...</span>
+//                 </div>
+//               )}
+//             </div>
+//           </>
+//         ) : (
+//           <div className="flex flex-col items-center justify-center flex-1 p-4">
+//             <img
+//               src="/placeholder.svg?height=160&width=160"
+//               alt="WhatsApp"
+//               className="hidden sm:block w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 mb-4 sm:mb-6"
+//             />
+//             <h2 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-4">Click a user to chat</h2>
+//           </div>
+//         )}
+//       </div>
+
+//       {showInfoPanel && selectedUser && (
+//         <div
+//           className={`${
+//             isMobile
+//               ? "fixed inset-0 bg-white z-30 p-4"
+//               : "absolute right-0 top-16 bottom-4 w-64 sm:w-72 md:w-80 bg-white shadow-2xl border-l rounded-l-2xl p-4 z-20"
+//           }`}
+//         >
+//           <div className="flex justify-between items-center mb-4">
+//             <h3 className="font-semibold text-base sm:text-lg">User Info</h3>
+//             <button onClick={toggleInfoPanel} className="text-gray-500 hover:text-gray-700">
+//               <X size={18} className="sm:w-5 sm:h-5" />
+//             </button>
+//           </div>
+//           <div className="space-y-3 text-sm text-gray-700">
+//             <div className="bg-gray-300 text-black w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 mx-auto sm:ml-32">
+//               {selectedUser.firstName.charAt(0)}
+//               {selectedUser.lastName.charAt(0)}
+//             </div>
+//             <div className="flex flex-col min-w-0 text-center sm:ml-28">
+//               <p className="truncate max-w-[200px] sm:max-w-[140px] font-semibold text-sm sm:text-base">
+//                 {selectedUser.firstName} {selectedUser.lastName}
+//               </p>
+//               <span className="text-xs bg-purple-50 text-purple-800 px-2 py-1 rounded-md mt-2 inline-block">Lead</span>
+//             </div>
+//             <hr />
+//             <h1 className="font-semibold text-base sm:text-lg">Details</h1>
+//             <div className="flex items-center gap-2 mt-2">
+//               <MessageSquareTextIcon size={14} className="text-orange-500 sm:w-4 sm:h-4" />
+//               <span className="font-extralight text-xs sm:text-sm">
+//                 Source <span className="text-indigo-500">{selectedUser.source}</span>
+//               </span>
+//             </div>
+//             <div className="flex items-center gap-2 mt-2">
+//               <Calendar size={14} className="text-cyan-500 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
+//               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
+//                 Creation Time <span className="text-indigo-500">{selectedUser.creationTime}</span>
+//               </span>
+//             </div>
+//             <div className="flex items-center gap-2">
+//               <Clock size={14} className="text-orange-300 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
+//               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
+//                 Last Activity <span className="text-indigo-500">{selectedUser.lastActivity}</span>
+//               </span>
+//             </div>
+//             <div className="flex items-center gap-2">
+//               <Phone size={14} className="text-green-500 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
+//               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
+//                 Phone <span className="text-indigo-500">{selectedUser.phone}</span>
+//               </span>
+//             </div>
+//           </div>
+//           <hr className="mt-3" />
+//           <div className="mt-4">
+//             <div className="flex justify-between items-center mb-2">
+//               <h4 className="font-medium text-sm sm:text-base">Notes</h4>
+//               <button className="text-blue-600 hover:text-blue-800">
+//                 <Plus size={16} className="sm:w-4 sm:h-4" />
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   )
+// }
+
+// export default Chat
+"use client"
+
 import {
   Mic,
   Menu,
@@ -10,13 +1712,13 @@ import {
   Clock,
   Download,
   FileMinus,
-  Text,
   Check,
   CheckCheck,
   PaperclipIcon,
   ImageIcon,
   VideoIcon,
   FileIcon,
+  ChevronDown,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
@@ -98,6 +1800,7 @@ const MessageTicks = ({ status, timestamp }) => {
         )
     }
   }
+
   return <div className="mt-1 text-left">{renderTicks()}</div>
 }
 
@@ -363,6 +2066,7 @@ const MessageRenderer = ({ message, position = "left", userList }) => {
         return TextMessage
     }
   })()
+
   return (
     <div className={`flex ${position === "right" ? "justify-end" : "justify-start"} mb-2 sm:mb-3`}>
       <Component message={message} position={position} userList={userList} />
@@ -416,6 +2120,20 @@ function Chat() {
   const documentInputRef = useRef(null)
   const scrollTimeoutRef = useRef(null)
 
+  // New states for popup functionality
+  const [showPopup, setShowPopup] = useState(false)
+  const [selectedOption, setSelectedOption] = useState("")
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [dropdownContent, setDropdownContent] = useState("")
+
+  // Dropdown options
+  const dropdownOptions = [
+    { value: "template1", label: "Welcome Template" },
+    { value: "template2", label: "Thank You Template" },
+    { value: "template3", label: "Follow Up Template" },
+    { value: "custom", label: "Custom Message" },
+  ]
+
   const toggleAttachmentMenu3 = () => setIsOpen((prev) => !prev)
 
   const handleFileSend = async (e, type) => {
@@ -423,7 +2141,6 @@ function Chat() {
     if (!file) return
 
     setUploadingFile(true)
-
     try {
       // Validate selected user & phone number
       if (!selectedUser?.wa_id_or_sender) {
@@ -505,7 +2222,9 @@ function Chat() {
 
       if (!sendMessageResponse.ok || !sendMessageResult.messages?.length) {
         alert(
-          `Send message failed: ${sendMessageResult?.error?.message || sendMessageResult?.message || JSON.stringify(sendMessageResult)}`,
+          `Send message failed: ${
+            sendMessageResult?.error?.message || sendMessageResult?.message || JSON.stringify(sendMessageResult)
+          }`,
         )
         setUploadingFile(false)
         e.target.value = null
@@ -554,7 +2273,6 @@ function Chat() {
 
         // Save to localStorage
         saveMessagesToStorage(updatedUsers)
-
         return updatedUsers
       })
 
@@ -594,6 +2312,7 @@ function Chat() {
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current)
     }
+
     scrollTimeoutRef.current = setTimeout(() => {
       if (messagesContainerRef.current) {
         const container = messagesContainerRef.current
@@ -630,10 +2349,12 @@ function Chat() {
     if (!contactName || contactName.trim() === "") {
       return { firstName: "Unknown", lastName: "User" }
     }
+
     const nameParts = contactName.trim().split(" ")
     if (nameParts.length === 1) {
       return { firstName: nameParts[0], lastName: "" }
     }
+
     return {
       firstName: nameParts[0],
       lastName: nameParts.slice(1).join(" "),
@@ -996,6 +2717,7 @@ function Chat() {
               }
             : user,
         )
+
         const updated = newUsers.find((u) => u.wa_id_or_sender === userWaId)
         setSelectedUser(updated)
         return newUsers
@@ -1152,13 +2874,62 @@ function Chat() {
 
   const toggleAttachmentMenu = () => setShowAttachmentMenu((prev) => !prev)
 
+  // New popup functions
+  const handlePlusClick = () => {
+    setShowPopup(true)
+    setSelectedOption("")
+    setDropdownContent("")
+    setShowDropdown(false)
+  }
+
+  const handlePopupCancel = () => {
+    setShowPopup(false)
+    setSelectedOption("")
+    setDropdownContent("")
+    setShowDropdown(false)
+  }
+
+  const handlePopupSend = () => {
+    if (selectedOption && dropdownContent) {
+      // Here you can handle sending the selected template or custom message
+      console.log("Sending:", { option: selectedOption, content: dropdownContent })
+      alert(`Sending: ${selectedOption} with content: ${dropdownContent}`)
+    }
+    setShowPopup(false)
+    setSelectedOption("")
+    setDropdownContent("")
+    setShowDropdown(false)
+  }
+
+  const handleDropdownSelect = (option) => {
+    setSelectedOption(option.value)
+    setShowDropdown(true)
+
+    // Set content based on selection
+    switch (option.value) {
+      case "template1":
+        setDropdownContent("Welcome to our service! We're glad to have you.")
+        break
+      case "template2":
+        setDropdownContent("Thank you for your business. We appreciate your support!")
+        break
+      case "template3":
+        setDropdownContent("Following up on our previous conversation. How can we help you further?")
+        break
+      case "custom":
+        setDropdownContent("Enter your custom message here...")
+        break
+      default:
+        setDropdownContent("")
+    }
+  }
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (isOpen && !event.target.closest(".attachment-menu-container")) {
         setIsOpen(false)
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [isOpen])
@@ -1205,6 +2976,85 @@ function Chat() {
 
   return (
     <div className="flex h-screen bg-gray-100 p-2 sm:p-4 lg:p-6 gap-2 sm:gap-4 pt-16 sm:pt-20">
+      {/* Popup Modal */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw] shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">Select Template</h3>
+
+            {/* Dropdown */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Choose Template</label>
+              <div className="relative">
+                <select
+                  value={selectedOption}
+                  onChange={(e) => {
+                    const option = dropdownOptions.find((opt) => opt.value === e.target.value)
+                    if (option) handleDropdownSelect(option)
+                  }}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                >
+                  <option value="">Select an option...</option>
+                  {dropdownOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                  size={20}
+                />
+              </div>
+            </div>
+
+            {/* Content area that shows when dropdown is selected */}
+            {showDropdown && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label>
+                <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
+                  <div className="mb-3">
+                    <div className="bg-white p-3 rounded border border-gray-300">
+                      <h4 className="font-medium text-sm text-gray-800 mb-2">Preview:</h4>
+                      <p className="text-sm text-gray-600">{dropdownContent}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="bg-white p-3 rounded border border-gray-300">
+                      <h4 className="font-medium text-sm text-gray-800 mb-2">Edit Content:</h4>
+                      <textarea
+                        value={dropdownContent}
+                        onChange={(e) => setDropdownContent(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
+                        rows="3"
+                        placeholder="Enter your message content..."
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handlePopupCancel}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePopupSend}
+                disabled={!selectedOption || !dropdownContent}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         className={`${
           showSidebar ? "flex" : "hidden"
@@ -1356,20 +3206,9 @@ function Chat() {
               <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-full px-2 sm:px-3 py-1.5 sm:py-2">
                 <div className="flex items-center gap-1 sm:gap-2">
                   <div className="relative attachment-menu-container">
-                    <button className="text-gray-500 hover:text-blue-600 p-2" onClick={toggleAttachmentMenu}>
+                    <button className="text-gray-500 hover:text-blue-600 p-2" onClick={handlePlusClick}>
                       <Plus size={18} className="sm:w-5 sm:h-5" />
                     </button>
-                    {showAttachmentMenu && (
-                      <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg border p-2 w-20 sm:w-24 z-50">
-                        <button
-                          className="flex flex-col items-center p-2 hover:bg-gray-100 rounded-md text-xs sm:text-sm w-full"
-                          onClick={() => setShowAttachmentMenu(false)}
-                        >
-                          <Text size={16} className="mb-1 text-indigo-500 sm:w-5 sm:h-5" />
-                          Template
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   <div className="relative inline-block text-left attachment-menu-container">
@@ -1398,7 +3237,6 @@ function Chat() {
                           className="hidden"
                           onChange={(e) => handleFileSend(e, "image")}
                         />
-
                         {/* Video Upload */}
                         <button
                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
@@ -1415,7 +3253,6 @@ function Chat() {
                           className="hidden"
                           onChange={(e) => handleFileSend(e, "video")}
                         />
-
                         {/* Document Upload */}
                         <button
                           className="flex items-center gap-2 text-gray-700 hover:text-blue-600 w-full text-left py-1 px-2"
@@ -1473,7 +3310,6 @@ function Chat() {
                   </button>
                 </div>
               </div>
-
               {uploadingFile && (
                 <div className="flex items-center justify-center py-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
@@ -1508,44 +3344,37 @@ function Chat() {
               <X size={18} className="sm:w-5 sm:h-5" />
             </button>
           </div>
-
           <div className="space-y-3 text-sm text-gray-700">
             <div className="bg-gray-300 text-black w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 mx-auto sm:ml-32">
               {selectedUser.firstName.charAt(0)}
               {selectedUser.lastName.charAt(0)}
             </div>
-
             <div className="flex flex-col min-w-0 text-center sm:ml-28">
               <p className="truncate max-w-[200px] sm:max-w-[140px] font-semibold text-sm sm:text-base">
                 {selectedUser.firstName} {selectedUser.lastName}
               </p>
               <span className="text-xs bg-purple-50 text-purple-800 px-2 py-1 rounded-md mt-2 inline-block">Lead</span>
             </div>
-
             <hr />
             <h1 className="font-semibold text-base sm:text-lg">Details</h1>
-
             <div className="flex items-center gap-2 mt-2">
               <MessageSquareTextIcon size={14} className="text-orange-500 sm:w-4 sm:h-4" />
               <span className="font-extralight text-xs sm:text-sm">
                 Source <span className="text-indigo-500">{selectedUser.source}</span>
               </span>
             </div>
-
             <div className="flex items-center gap-2 mt-2">
               <Calendar size={14} className="text-cyan-500 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
                 Creation Time <span className="text-indigo-500">{selectedUser.creationTime}</span>
               </span>
             </div>
-
             <div className="flex items-center gap-2">
               <Clock size={14} className="text-orange-300 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
                 Last Activity <span className="text-indigo-500">{selectedUser.lastActivity}</span>
               </span>
             </div>
-
             <div className="flex items-center gap-2">
               <Phone size={14} className="text-green-500 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
@@ -1553,9 +3382,7 @@ function Chat() {
               </span>
             </div>
           </div>
-
           <hr className="mt-3" />
-
           <div className="mt-4">
             <div className="flex justify-between items-center mb-2">
               <h4 className="font-medium text-sm sm:text-base">Notes</h4>
