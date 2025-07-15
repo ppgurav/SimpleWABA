@@ -1968,12 +1968,12 @@ const ImageMessage = ({ message, position }) => (
         e.target.src = "/placeholder.svg?height=240&width=240"
       }}
     />
-    {message.caption && (
+    {/* {message.caption && (
       <div
         dangerouslySetInnerHTML={{ __html: formatText(message.caption, "image") }}
         className={`text-sm ${position === "right" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
-    )}
+    )} */}
     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
     {position === "left" && message.timestamp && (
       <div className="text-xs text-gray-500 mt-1 text-right opacity-75">{message.timestamp}</div>
