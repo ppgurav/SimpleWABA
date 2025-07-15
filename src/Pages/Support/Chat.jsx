@@ -9892,7 +9892,6 @@
 // export default Chat
 
 
-"use client"
 
 import {
   Mic,
