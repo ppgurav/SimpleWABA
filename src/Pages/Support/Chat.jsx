@@ -9892,7 +9892,7 @@
 // export default Chat
 
 
-
+"use client"
 
 import {
   Mic,
@@ -9994,7 +9994,6 @@ const MessageTicks = ({ status, timestamp }) => {
         )
     }
   }
-
   return <div className="mt-1 text-left">{renderTicks()}</div>
 }
 
@@ -10130,7 +10129,6 @@ const formatText = (text, messageType = "text") => {
     .replace(/\\_/g, "_")
     .replace(/\\~/g, "~")
     .replace(/\\`/g, "`")
-
   return formattedText
 }
 
@@ -10261,7 +10259,6 @@ const MessageRenderer = ({ message, position = "left", userList }) => {
         return TextMessage
     }
   })()
-
   return (
     <div className={`flex ${position === "right" ? "justify-end" : "justify-start"} mb-2 sm:mb-3`}>
       <Component message={message} position={position} userList={userList} />
@@ -10322,16 +10319,17 @@ function Chat() {
     if (!file) return
 
     setUploadingFile(true)
+
     try {
       // Validate selected user & phone number
-      if (!selectedUser?.waId && !selectedUser?.phone) {
+      if (!selectedUser?.wa_id_or_sender) {
         alert("Please select a user to send message")
         e.target.value = null
         setUploadingFile(false)
         return
       }
 
-      let phoneNumber = selectedUser.waId || selectedUser.phone
+      let phoneNumber = selectedUser.wa_id_or_sender
       if (phoneNumber.startsWith("+")) phoneNumber = phoneNumber.slice(1)
       phoneNumber = phoneNumber.replace(/[^\d]/g, "")
 
@@ -10402,22 +10400,21 @@ function Chat() {
 
       if (!sendMessageResponse.ok || !sendMessageResult.messages?.length) {
         alert(
-          `Send message failed: ${
-            sendMessageResult?.error?.message || sendMessageResult?.message || JSON.stringify(sendMessageResult)
-          }`,
+          `Send message failed: ${sendMessageResult?.error?.message || sendMessageResult?.message || JSON.stringify(sendMessageResult)}`,
         )
         setUploadingFile(false)
         e.target.value = null
         return
       }
 
-      // Create message object for UI
+      // Create message object for UI - FIXED: Proper structure for UI display
       const messageId = `file-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
       const newFileMessage = {
         id: messageId,
-        type,
+        type: type,
+        text: type === "document" ? file.name : file.name || "",
         mediaUrl: uploadedUrl,
         imageUrl: type === "image" ? uploadedUrl : undefined,
         videoUrl: type === "video" ? uploadedUrl : undefined,
@@ -10426,31 +10423,35 @@ function Chat() {
         fileName: file.name,
         caption: file.name,
         status: MessageStatus.SENT,
-        timestamp,
+        timestamp: timestamp,
         role: "user",
         isRead: true,
-        // Add persistent flag to identify locally sent messages
         isLocalMessage: true,
         sentAt: Date.now(),
       }
 
-      // Add message to UI
+      // Add message to UI - FIXED: Ensure proper state update
       const wasNearBottom = checkIfNearBottom()
-      const updatedUsers = userList.map((user) =>
-        user.id === selectedUser.id
-          ? {
-              ...user,
-              messages: [...user.messages, newFileMessage],
-            }
-          : user,
-      )
 
-      setUserList(updatedUsers)
-      const updatedUser = updatedUsers.find((user) => user.id === selectedUser.id)
-      setSelectedUser(updatedUser)
+      setUserList((prevUsers) => {
+        const updatedUsers = prevUsers.map((user) =>
+          user.id === selectedUser.id
+            ? {
+                ...user,
+                messages: [...(user.messages || []), newFileMessage],
+              }
+            : user,
+        )
 
-      // Save to localStorage immediately
-      saveMessagesToStorage(updatedUsers)
+        // Update selectedUser immediately
+        const updatedSelectedUser = updatedUsers.find((user) => user.id === selectedUser.id)
+        setSelectedUser(updatedSelectedUser)
+
+        // Save to localStorage
+        saveMessagesToStorage(updatedUsers)
+
+        return updatedUsers
+      })
 
       if (wasNearBottom) {
         setTimeout(() => {
@@ -10488,7 +10489,6 @@ function Chat() {
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current)
     }
-
     scrollTimeoutRef.current = setTimeout(() => {
       if (messagesContainerRef.current) {
         const container = messagesContainerRef.current
@@ -10525,12 +10525,10 @@ function Chat() {
     if (!contactName || contactName.trim() === "") {
       return { firstName: "Unknown", lastName: "User" }
     }
-
     const nameParts = contactName.trim().split(" ")
     if (nameParts.length === 1) {
       return { firstName: nameParts[0], lastName: "" }
     }
-
     return {
       firstName: nameParts[0],
       lastName: nameParts.slice(1).join(" "),
@@ -10581,7 +10579,7 @@ function Chat() {
           isRead: apiMessage.read === 1,
           role,
           timestamp,
-          status: MessageStatus.READ,
+          status: MessageStatus.read,
         }
       case "image":
         return {
@@ -10593,7 +10591,7 @@ function Chat() {
           isRead: apiMessage.read === 1,
           role,
           timestamp,
-          status: MessageStatus.READ,
+          status: MessageStatus.read,
         }
       case "document":
         return {
@@ -10607,7 +10605,7 @@ function Chat() {
           isRead: apiMessage.read === 1,
           role,
           timestamp,
-          status: MessageStatus.READ,
+          status: MessageStatus.read,
         }
       case "video":
         return {
@@ -10619,7 +10617,7 @@ function Chat() {
           isRead: apiMessage.read === 1,
           role,
           timestamp,
-          status: MessageStatus.READ,
+          status: MessageStatus.read,
         }
       default:
         return {
@@ -10629,7 +10627,7 @@ function Chat() {
           isRead: apiMessage.read === 1,
           role,
           timestamp,
-          status: MessageStatus.READ,
+          status: MessageStatus.read,
         }
     }
   }
@@ -10685,7 +10683,7 @@ function Chat() {
     const previousScrollHeight = container.scrollHeight
     const nextPage = currentPage + 1
 
-    const { messages: newMessages, hasMore } = await fetchUserMessages(selectedUser.waId, nextPage, true)
+    const { messages: newMessages, hasMore } = await fetchUserMessages(selectedUser.wa_id_or_sender, nextPage, true)
 
     if (newMessages.length > 0) {
       const updatedUser = {
@@ -10730,7 +10728,7 @@ function Chat() {
       container.addEventListener("scroll", handleScroll)
       return () => container.removeEventListener("scroll", handleScroll)
     }
-  }, [selectedUser?.waId, hasMoreMessages, loadingMoreMessages, isScrolling, currentPage])
+  }, [selectedUser?.wa_id_or_sender, hasMoreMessages, loadingMoreMessages, isScrolling, currentPage])
 
   useEffect(() => {
     if (selectedUser && selectedUser.messages && shouldScrollToBottom && isNearBottom) {
@@ -10802,6 +10800,7 @@ function Chat() {
               remainingTime: formatRemainingTime(chat.last_message_date),
               userName: chat.user_name || "Unknown",
               waId: chat.wa_id_or_sender,
+              wa_id_or_sender: chat.wa_id_or_sender, // FIXED: Added this field
               messages: [],
             }
           })
@@ -10812,7 +10811,7 @@ function Chat() {
       // Merge with stored messages - FIXED: Preserve local messages
       const storedUsers = loadMessagesFromStorage()
       const mergedUsers = transformedData.map((apiUser) => {
-        const storedUser = storedUsers.find((stored) => stored.waId === apiUser.waId)
+        const storedUser = storedUsers.find((stored) => stored.wa_id_or_sender === apiUser.wa_id_or_sender)
         if (storedUser && storedUser.messages) {
           // Keep local messages, especially those marked as isLocalMessage
           return {
@@ -10845,6 +10844,7 @@ function Chat() {
             phone: "+1234567890",
             notes: "",
             waId: "918857808284",
+            wa_id_or_sender: "918857808284", // FIXED: Added this field
             messages: [
               {
                 id: "demo-msg-1",
@@ -10853,7 +10853,7 @@ function Chat() {
                 isRead: true,
                 timestamp: "10:30 AM",
                 role: "assistant",
-                status: MessageStatus.READ,
+                status: MessageStatus.read,
               },
             ],
           },
@@ -10884,15 +10884,14 @@ function Chat() {
     const updateMessageStatus = (status) => {
       setUserList((prevUsers) => {
         const newUsers = prevUsers.map((user) =>
-          user.waId === userWaId
+          user.wa_id_or_sender === userWaId
             ? {
                 ...user,
                 messages: user.messages.map((msg) => (msg.id === messageId ? { ...msg, status } : msg)),
               }
             : user,
         )
-
-        const updated = newUsers.find((u) => u.waId === userWaId)
+        const updated = newUsers.find((u) => u.wa_id_or_sender === userWaId)
         setSelectedUser(updated)
         return newUsers
       })
@@ -10923,6 +10922,7 @@ function Chat() {
 
     // Add message to UI immediately with "sending" status
     const wasNearBottom = checkIfNearBottom()
+
     const updatedUsers = userList.map((user) =>
       user.id === selectedUser.id
         ? {
@@ -10951,7 +10951,7 @@ function Chat() {
         "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
       const wabaId = sessionStorage.getItem("361462453714220") || "361462453714220"
 
-      let phoneNumber = selectedUser.waId || selectedUser.phone || ""
+      let phoneNumber = selectedUser.wa_id_or_sender || ""
       if (phoneNumber.startsWith("+")) {
         phoneNumber = phoneNumber.substring(1)
       }
@@ -10992,13 +10992,14 @@ function Chat() {
       }
 
       // Start status simulation after successful API call
-      simulateMessageStatusUpdates(messageId, selectedUser.waId)
+      simulateMessageStatusUpdates(messageId, selectedUser.wa_id_or_sender)
     } catch (error) {
       console.error("API Error:", error.message)
+
       // Update message status to failed
       setUserList((prevUsers) =>
         prevUsers.map((user) =>
-          user.waId === selectedUser.waId
+          user.wa_id_or_sender === selectedUser.wa_id_or_sender
             ? {
                 ...user,
                 messages: user.messages.map((msg) =>
@@ -11008,6 +11009,7 @@ function Chat() {
             : user,
         ),
       )
+
       alert(`Failed to send message: ${error.message}`)
       return
     }
@@ -11021,8 +11023,8 @@ function Chat() {
     setShouldScrollToBottom(true)
     setIsNearBottom(true)
 
-    if (user.waId) {
-      const { messages, hasMore } = await fetchUserMessages(user.waId, 1, false)
+    if (user.wa_id_or_sender) {
+      const { messages, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
 
       // Merge API messages with local messages
       const localMessages = user.messages || []
@@ -11232,7 +11234,7 @@ function Chat() {
               ) : (
                 selectedUser.messages.map((msg, index) => (
                   <div
-                    key={generateMessageKey(msg, index, selectedUser.waId || selectedUser.id)}
+                    key={generateMessageKey(msg, index, selectedUser.wa_id_or_sender || selectedUser.id)}
                     className="relative group"
                   >
                     <MessageRenderer
@@ -11407,32 +11409,38 @@ function Chat() {
               {selectedUser.firstName.charAt(0)}
               {selectedUser.lastName.charAt(0)}
             </div>
+
             <div className="flex flex-col min-w-0 text-center sm:ml-28">
               <p className="truncate max-w-[200px] sm:max-w-[140px] font-semibold text-sm sm:text-base">
                 {selectedUser.firstName} {selectedUser.lastName}
               </p>
               <span className="text-xs bg-purple-50 text-purple-800 px-2 py-1 rounded-md mt-2 inline-block">Lead</span>
             </div>
+
             <hr />
             <h1 className="font-semibold text-base sm:text-lg">Details</h1>
+
             <div className="flex items-center gap-2 mt-2">
               <MessageSquareTextIcon size={14} className="text-orange-500 sm:w-4 sm:h-4" />
               <span className="font-extralight text-xs sm:text-sm">
                 Source <span className="text-indigo-500">{selectedUser.source}</span>
               </span>
             </div>
+
             <div className="flex items-center gap-2 mt-2">
               <Calendar size={14} className="text-cyan-500 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
                 Creation Time <span className="text-indigo-500">{selectedUser.creationTime}</span>
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <Clock size={14} className="text-orange-300 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
                 Last Activity <span className="text-indigo-500">{selectedUser.lastActivity}</span>
               </span>
             </div>
+
             <div className="flex items-center gap-2">
               <Phone size={14} className="text-green-500 mt-1 sm:mt-3 sm:w-4 sm:h-4" />
               <span className="mt-1 sm:mt-3 font-extralight text-xs sm:text-sm">
