@@ -222,13 +222,20 @@ const Dashboard = () => {
 
   const fetchUserProfile = async () => {
     try {
+      // const phoneNumbers = JSON.parse(localStorage.getItem("phone_numbers") || "[]")
+
+      const phoneNumbers = JSON.parse(localStorage.getItem("phone_numbers") || "[]")
+      const phoneNumberId = phoneNumbers[0]?.phone_number_id
+      console.log("Phone Numbers from localStorage:", phoneNumbers)
+
+      // const phoneNumberId = localStorage.getItem("phone_number_id");
       const wabaId = sessionStorage.getItem("waba_id")
       const accessToken = sessionStorage.getItem("auth_token")
       if (!wabaId || !accessToken) {
         console.error("Missing waba_id or auth_token in sessionStorage")
         throw new Error("Missing authentication data")
       }
-      const response = await fetch(`${BASE_URL}/api/phone-profile/361462453714220`, {
+      const response = await fetch(`${BASE_URL}/api/phone-profile/${phoneNumberId}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
