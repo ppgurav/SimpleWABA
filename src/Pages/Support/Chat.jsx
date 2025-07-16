@@ -3978,7 +3978,8 @@ const TextMessage = ({ message, position }) => (
       dangerouslySetInnerHTML={{ __html: formatText(message.text, "text") }}
       className="whitespace-pre-wrap break-words"
     />
-    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
+     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+    {/* {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />} */}
   </div>
 )
 
@@ -4002,7 +4003,8 @@ const ImageMessage = ({ message, position }) => (
         className={`text-sm ${position === "left" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
     )} */}
-    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
+     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+    {/* {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />} */}
   </div>
 )
 
@@ -4034,7 +4036,8 @@ const DocumentMessage = ({ message, position }) => (
         className={`text-sm ${position === "left" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
     )}
-    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
+     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+    {/* {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />} */}
   </div>
 )
 
@@ -4062,7 +4065,8 @@ const TemplateMessage = ({ message, position }) => (
       />
     </div>
     {/* Use MessageTicks for timestamp and status */}
-    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
+    {/* {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />} */}
+    {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
   </div>
 )
 
@@ -4085,7 +4089,8 @@ const VideoMessage = ({ message, position }) => (
         className={`text-sm ${position === "left" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
     )}
-    <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
+     {position === "right" && <MessageTicks status={message.status} timestamp={message.timestamp} />}
+    {/* <MessageTicks status={message.status} timestamp={message.timestamp} position={position} /> */}
   </div>
 )
 
