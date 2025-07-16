@@ -3704,6 +3704,9 @@
 
 
 
+
+
+
 import {
   Mic,
   Menu,
@@ -3756,11 +3759,11 @@ const MessageStatus = {
 
 const MessageTicks = ({ status, timestamp, position }) => {
   const renderTicks = () => {
-    // Determine alignment based on position
-    const alignmentClass = position === "right" ? "justify-end" : "justify-start"
-
-    // If it's an outgoing message (on the left), return only timestamp
-    if (position === "left") {
+    // Ticks should be for outgoing messages (position === "left" in this setup)
+    // Incoming messages (position === "right") should only show timestamp.
+    const alignmentClass = position === "left" ? "justify-start" : "justify-end" // Corrected alignment for ticks
+    if (position === "right") {
+      // Incoming messages: only timestamp
       return (
         <div className={`flex items-center gap-1 ${alignmentClass}`}>
           <span className="text-xs text-gray-500">{timestamp}</span>
@@ -3768,7 +3771,7 @@ const MessageTicks = ({ status, timestamp, position }) => {
       )
     }
 
-    // For incoming messages (position === "right"), render ticks based on status
+    // Outgoing messages: render ticks based on status
     switch (status) {
       case MessageStatus.SENT:
         return (
@@ -3951,10 +3954,9 @@ const formatText = (text, messageType = "text") => {
 }
 
 // Define consistent classes for message bubbles
-// Reversed: outgoing (user) messages are now on the left, incoming (assistant) on the right
-const outgoingMessageClasses = "bg-gradient-to-br from-gray-50 to-gray-300 shadow-lg border border-gray-300 self-start"
-const incomingMessageClasses =
-  "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300 self-end"
+// Outgoing (user) messages are on the left, incoming (assistant) on the right
+const outgoingMessageClasses = "bg-gradient-to-br from-gray-50 to-gray-300 shadow-lg border border-gray-300"
+const incomingMessageClasses = "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300"
 
 const TextMessage = ({ message, position }) => (
   <div
@@ -3976,8 +3978,7 @@ const TextMessage = ({ message, position }) => (
       dangerouslySetInnerHTML={{ __html: formatText(message.text, "text") }}
       className="whitespace-pre-wrap break-words"
     />
-    {/* Render MessageTicks for both positions */}
-    <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
+    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
   </div>
 )
 
@@ -4001,8 +4002,7 @@ const ImageMessage = ({ message, position }) => (
         className={`text-sm ${position === "left" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
     )} */}
-    {/* Render MessageTicks for both positions */}
-    <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
+    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
   </div>
 )
 
@@ -4034,17 +4034,26 @@ const DocumentMessage = ({ message, position }) => (
         className={`text-sm ${position === "left" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
     )}
-    {/* Render MessageTicks for both positions */}
-    <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
+    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
   </div>
 )
+
 const TemplateMessage = ({ message, position }) => (
   <div
-    className={`${position === "right" ? "bg-gradient-to-br from-gray-50 to-gray-300  shadow-lg border border-gray-300" : "bg-gradient-to-br from-indigo-200 to-indigo-50 shadow-lg border border-blue-300"} p-2 md:p-3 rounded-xl max-w-xs md:max-w-sm self-start relative`}
+    className={`${
+      position === "left" ? outgoingMessageClasses : incomingMessageClasses
+    } p-2 md:p-3 rounded-xl max-w-xs md:max-w-sm relative`}
   >
     {/* Show header image if exists */}
     {message.headerImage && (
-      <img src={message.headerImage || "/placeholder.svg"} alt="Header" className="w-full object-cover" />
+      <img
+        src={message.headerImage || "/placeholder.svg?height=240&width=240"}
+        alt="Header"
+        className="w-full object-cover rounded-t-xl"
+        onError={(e) => {
+          e.target.src = "/placeholder.svg?height=240&width=240"
+        }}
+      />
     )}
     <div className="p-3">
       <div
@@ -4052,13 +4061,11 @@ const TemplateMessage = ({ message, position }) => (
         className="text-sm whitespace-pre-wrap break-words"
       />
     </div>
-    {message.timestamp && (
-      <div className="text-xs text-gray-500 mt-1 text-right">
-        {new Date(+message.timestamp * 1000).toLocaleString()}
-      </div>
-    )}
+    {/* Use MessageTicks for timestamp and status */}
+    {position === "left" && <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />}
   </div>
 )
+
 const VideoMessage = ({ message, position }) => (
   <div
     className={`${
@@ -4078,12 +4085,11 @@ const VideoMessage = ({ message, position }) => (
         className={`text-sm ${position === "left" ? "text-black" : "text-gray-600"} whitespace-pre-wrap break-words`}
       />
     )}
-    {/* Render MessageTicks for both positions */}
     <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
   </div>
 )
 
-const MessageRenderer = ({ message, userList }) => {
+const MessageRenderer = ({ message }) => {
   const Component = (() => {
     switch (message.type) {
       case MessageType.IMAGE:
@@ -4092,6 +4098,8 @@ const MessageRenderer = ({ message, userList }) => {
         return DocumentMessage
       case MessageType.VIDEO:
         return VideoMessage
+      case MessageType.TEMPLATE: // Added TemplateMessage
+        return TemplateMessage
       case MessageType.TEXT:
       default:
         return TextMessage
@@ -4101,7 +4109,7 @@ const MessageRenderer = ({ message, userList }) => {
   const position = message.role === "user" ? "left" : "right"
   return (
     <div className={`flex ${position === "left" ? "justify-start" : "justify-end"} mb-2 sm:mb-3`}>
-      <Component message={message} position={position} userList={userList} />
+      <Component message={message} position={position} />
     </div>
   )
 }
@@ -4114,12 +4122,11 @@ const generateMessageKey = (message) => {
   return message.id || `temp-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
-const generateUserKey = (user, index) => {
-  const waId = user.waId || "no-wa-id"
-  const userId = user.id || "no-id"
-  const phone = user.phone || "no-phone"
-  const randomId = Math.random().toString(36).substr(2, 9)
-  return `user-${waId}-${userId}-${phone}-${index}-${randomId}`.replace(/[^a-zA-Z0-9-]/g, "")
+// Modified generateUserKey to use a stable unique identifier
+const generateUserKey = (user) => {
+  // Use a stable, unique identifier from the user object.
+  // user.id (from chat.User_ID) or user.waId (from chat.wa_id_or_sender) should be unique.
+  return user.id || user.waId || `temp-user-${Math.random().toString(36).substr(2, 9)}`
 }
 
 // Helper to determine status order for merging
@@ -4136,6 +4143,41 @@ const getStatusOrder = (status) => {
     default:
       return 0 // For unknown or no status
   }
+}
+
+// New mergeMessages function for robust de-duplication and status prioritization
+const mergeMessages = (newMessages, existingMessages) => {
+  const uniqueMessagesMap = new Map() // Key: message.id
+
+  // Add existing messages first. This ensures local messages (especially pending ones) are considered.
+  existingMessages.forEach((msg) => {
+    uniqueMessagesMap.set(msg.id, msg)
+  })
+
+  // Now, iterate through new messages (e.g., from API fetch or new local send).
+  newMessages.forEach((newMessage) => {
+    const existing = uniqueMessagesMap.get(newMessage.id)
+    if (existing) {
+      // Message with this ID already exists. Decide which one to keep/merge.
+      // Prioritize the new message if it's an API message and the existing is local,
+      // or if the new message has a more advanced status.
+      if (
+        (!newMessage.isLocalMessage && existing.isLocalMessage) || // New is API, existing is local temp
+        getStatusOrder(newMessage.status) > getStatusOrder(existing.status) // New has higher status
+      ) {
+        uniqueMessagesMap.set(newMessage.id, { ...existing, ...newMessage }) // Merge properties, new overwrites old
+      }
+      // Otherwise, keep the existing one (it's either API and new is local, or existing has higher/equal status)
+    } else {
+      // Message is new, add it
+      uniqueMessagesMap.set(newMessage.id, newMessage)
+    }
+  })
+
+  // Convert map values back to an array and sort by numeric timestamp (sentAt)
+  return Array.from(uniqueMessagesMap.values()).sort((a, b) => {
+    return (a.sentAt || 0) - (b.sentAt || 0)
+  })
 }
 
 function Chat() {
@@ -4213,6 +4255,7 @@ function Chat() {
 
     const wasNearBottom = checkIfNearBottom()
 
+    // Add the new message to the selected user's messages
     setUserList((prevUsers) => {
       const updatedUsers = prevUsers.map((user) =>
         user.id === selectedUser.id
@@ -4267,7 +4310,6 @@ function Chat() {
       // Upload file to server (S3)
       const formData = new FormData()
       formData.append("file", file)
-
       const uploadResponse = await fetch(`${BASE_URL}/api/${wabaId}/upload-file`, {
         method: "POST",
         headers: {
@@ -4283,7 +4325,6 @@ function Chat() {
       }
       const uploadResult = await uploadResponse.json()
       const uploadedUrl = uploadResult.data?.s3Url || uploadResult?.s3Url
-
       if (!uploadedUrl) {
         alert("Upload failed: No media URL returned")
         throw new Error("Upload failed: No media URL returned")
@@ -4318,7 +4359,6 @@ function Chat() {
       })
 
       const sendMessageResult = await sendMessageResponse.json()
-
       if (!sendMessageResponse.ok || !sendMessageResult.messages?.length) {
         alert(
           `Send message failed: ${
@@ -4350,6 +4390,7 @@ function Chat() {
                         videoUrl: type === "video" ? uploadedUrl : undefined,
                         documentUrl: type === "document" ? uploadedUrl : undefined,
                         status: MessageStatus.SENT, // Set initial API-confirmed status
+                        isLocalMessage: false, // No longer a local-only message
                       }
                     : msg,
                 ),
@@ -4513,6 +4554,7 @@ function Chat() {
           timestamp: displayTimestamp, // Display string
           sentAt: numericTimestamp, // Numeric for sorting
           status: apiMessage.read === 1 ? MessageStatus.READ : MessageStatus.DELIVERED,
+          isLocalMessage: false, // This message came from API
         }
       case "image":
         return {
@@ -4526,6 +4568,7 @@ function Chat() {
           timestamp: displayTimestamp,
           sentAt: numericTimestamp,
           status: apiMessage.read === 1 ? MessageStatus.READ : MessageStatus.DELIVERED,
+          isLocalMessage: false,
         }
       case "document":
         return {
@@ -4541,7 +4584,82 @@ function Chat() {
           timestamp: displayTimestamp,
           sentAt: numericTimestamp,
           status: apiMessage.read === 1 ? MessageStatus.READ : MessageStatus.DELIVERED,
+          isLocalMessage: false,
         }
+      case "template": {
+        const parsed = (() => {
+          try {
+            return JSON.parse(apiMessage.extra_info || "{}")
+          } catch (e) {
+            console.error("❌ Failed to parse extra_info JSON:", e)
+            return {}
+          }
+        })()
+
+        const templateId = apiMessage.phone_number_id || "361462453714220"
+        const templateName = parsed.name || "unknown_template"
+        let templateData = {}
+
+        try {
+          const res = await fetch(`${BASE_URL}/api/phone/get/message_template/${templateId}/${templateName}`)
+          const json = await res.json()
+          console.log("✅ Full API Response:", JSON.stringify(json, null, 2))
+          templateData = Array.isArray(json.data) ? json.data[0] : json.data || {}
+        } catch (err) {
+          console.error("❌ Template fetch failed:", err)
+        }
+
+        let components = []
+        try {
+          components =
+            typeof templateData.components === "string"
+              ? JSON.parse(templateData.components)
+              : templateData.components || []
+        } catch (e) {
+          console.error("❌ Failed to parse components:", e)
+        }
+
+        console.log("📦 Parsed components:", components)
+
+        const bodyComponent = components.find((c) => c.type?.toLowerCase() === "body")
+        console.log("📨 BODY component:", bodyComponent)
+
+        const bodyTemplate = bodyComponent?.text || "Template"
+        console.log("📝 bodyTemplate:", bodyTemplate)
+
+        const bodyParams = parsed.components?.find((c) => c.type?.toLowerCase() === "body")?.parameters || []
+        const filledBody = bodyTemplate.replace(/\{\{(\d+)\}\}/g, (_, idx) => {
+          return bodyParams[+idx - 1]?.text || ""
+        })
+
+        console.log("✅ filledBody:", filledBody)
+
+        const footerText = components.find((c) => c.type?.toLowerCase() === "footer")?.text || ""
+
+        // MODIFICATION START: Extract header image from fetched templateData components
+        const headerComponent = components.find((c) => c.type?.toLowerCase() === "header")
+        let headerImage = null
+        if (headerComponent && headerComponent.format === "IMAGE" && headerComponent.example?.header_handle?.[0]) {
+          headerImage = headerComponent.example.header_handle[0]
+        }
+        // MODIFICATION END
+
+        return {
+          id: messageId,
+          type: MessageType.TEMPLATE,
+          templateName,
+          headerText: templateName,
+          bodyText: filledBody,
+          footerText,
+          headerImage, // Use the headerImage derived from the fetched templateData
+          isRead: apiMessage.read === 1,
+          role,
+          timestamp: displayTimestamp, // Use displayTimestamp for consistency
+          sentAt: numericTimestamp, // Numeric for sorting
+          status: apiMessage.read === 1 ? MessageStatus.READ : MessageStatus.DELIVERED, // Set status based on read
+          isLocalMessage: false,
+        }
+      }
       case "video":
         return {
           id: messageId,
@@ -4554,6 +4672,7 @@ function Chat() {
           timestamp: displayTimestamp,
           sentAt: numericTimestamp,
           status: apiMessage.read === 1 ? MessageStatus.READ : MessageStatus.DELIVERED,
+          isLocalMessage: false,
         }
       default:
         return {
@@ -4565,6 +4684,7 @@ function Chat() {
           timestamp: displayTimestamp,
           sentAt: numericTimestamp,
           status: apiMessage.read === 1 ? MessageStatus.READ : MessageStatus.DELIVERED,
+          isLocalMessage: false,
         }
     }
   }
@@ -4591,8 +4711,8 @@ function Chat() {
       const transformedMessages = Array.isArray(response.data)
         ? await Promise.all(response.data.map(transformApiMessage))
         : []
-      const hasMore = transformedMessages.length > 0
 
+      const hasMore = transformedMessages.length > 0
       return { messages: transformedMessages, hasMore }
     } catch (error) {
       console.error(`Error fetching messages for page ${page}:`, error?.response?.data || error.message)
@@ -4617,38 +4737,39 @@ function Chat() {
 
     const previousScrollHeight = container.scrollHeight
     const nextPage = currentPage + 1
-    const { messages: newMessages, hasMore } = await fetchUserMessages(selectedUser.wa_id_or_sender, nextPage, true)
 
-    if (newMessages.length > 0) {
+    setLoadingMoreMessages(true)
+    const { messages: newApiMessages, hasMore } = await fetchUserMessages(selectedUser.wa_id_or_sender, nextPage, true)
+
+    if (newApiMessages.length > 0) {
+      // Merge new API messages with existing messages in selectedUser.messages
+      // The existing messages in selectedUser.messages already include local messages and previous API messages.
+      const mergedAndDedupedMessages = mergeMessages(newApiMessages, selectedUser.messages)
+
       const updatedUser = {
         ...selectedUser,
-        messages: [...newMessages.reverse(), ...selectedUser.messages],
+        messages: mergedAndDedupedMessages,
       }
       setSelectedUser(updatedUser)
       const updatedUsers = userList.map((u) => (u.id === selectedUser.id ? updatedUser : u))
       setUserList(updatedUsers)
       setCurrentPage(nextPage)
+
       setTimeout(() => {
         preserveScrollPosition(previousScrollHeight)
       }, 50)
     }
     setHasMoreMessages(hasMore)
+    setLoadingMoreMessages(false) // Ensure this is set to false
   }
 
   const handleScroll = () => {
-    if (!messagesContainerRef.current || loadingMoreMessages || !hasMoreMessages) return
-
+    if (loadingMoreMessages || !hasMoreMessages) return
     const container = messagesContainerRef.current
-    const scrollTop = container.scrollTop
-    const scrollThreshold = 100
+    if (!container) return
 
-    checkIfNearBottom()
-
-    if (scrollTop <= scrollThreshold && !isScrolling) {
-      setIsScrolling(true)
-      loadMoreMessages().finally(() => {
-        setTimeout(() => setIsScrolling(false), 1000)
-      })
+    if (container.scrollTop === 0) {
+      loadMoreMessages()
     }
   }
 
@@ -4666,45 +4787,10 @@ function Chat() {
     }
   }, [selectedUser, shouldScrollToBottom, isNearBottom])
 
-  // Merge local messages with API messages, prioritizing local status
-  const mergeMessages = (apiMessages, localMessages) => {
-    const mergedMap = new Map()
-
-    // Add API messages to the map, using their actual API ID
-    apiMessages.forEach((msg) => {
-      mergedMap.set(msg.id, { ...msg, isLocalMessage: false })
-    })
-
-    // Iterate through local messages and merge/update
-    localMessages.forEach((localMsg) => {
-      if (mergedMap.has(localMsg.id)) {
-        // Message exists in API response, compare statuses
-        const apiMsg = mergedMap.get(localMsg.id)
-        const apiStatusOrder = getStatusOrder(apiMsg.status)
-        const localStatusOrder = getStatusOrder(localMsg.status)
-
-        if (localStatusOrder > apiStatusOrder) {
-          // Local status is more advanced, use local message's status
-          mergedMap.set(localMsg.id, { ...apiMsg, status: localMsg.status })
-        }
-      } else if (localMsg.isLocalMessage) {
-        // This is a local-only message (e.g., still sending, or failed, or not yet synced to API)
-        mergedMap.set(localMsg.id, localMsg)
-      }
-    })
-
-    // Convert map values back to an array and sort by numeric timestamp (sentAt)
-    return Array.from(mergedMap.values()).sort((a, b) => {
-      // Ensure sentAt is always a number for reliable sorting
-      return (a.sentAt || 0) - (b.sentAt || 0)
-    })
-  }
-
   const fetchChats = async () => {
     try {
       setLoading(true)
       setError(null)
-
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220" // Corrected key
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7" // Corrected key
 
@@ -4754,7 +4840,6 @@ function Chat() {
         }
         return apiUser
       })
-
       setUserList(mergedUsers)
     } catch (error) {
       console.error("Error fetching chats:", error?.response?.data || error.message)
@@ -4786,6 +4871,7 @@ function Chat() {
                 sentAt: Date.now() - 60 * 60 * 1000, // Numeric timestamp for sorting
                 role: "assistant",
                 status: MessageStatus.READ,
+                isLocalMessage: false,
               },
             ],
           },
@@ -4921,7 +5007,12 @@ function Chat() {
                   ...user,
                   messages: user.messages.map((msg) =>
                     msg.id === messageId // Match by the temporary local ID
-                      ? { ...msg, id: apiReturnedMessageId || msg.id, status: MessageStatus.SENT } // Update ID and status
+                      ? {
+                          ...msg,
+                          id: apiReturnedMessageId || msg.id,
+                          status: MessageStatus.SENT,
+                          isLocalMessage: false,
+                        } // Update ID and status
                       : msg,
                   ),
                 }
@@ -4964,15 +5055,16 @@ function Chat() {
     setIsNearBottom(true)
 
     if (user.wa_id_or_sender) {
-      const { messages: apiMessages, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
-
-      // Load local messages for this specific user
+      // 1. Load local messages for this specific user from storage
       const storedUsers = loadMessagesFromStorage()
       const storedUser = storedUsers.find((u) => u.wa_id_or_sender === user.wa_id_or_sender)
-      const localMessages = storedUser ? storedUser.messages : []
+      const localMessagesForUser = storedUser ? storedUser.messages : []
 
-      // Merge API messages with local messages, prioritizing local status
-      const mergedMessages = mergeMessages([...apiMessages].reverse(), localMessages) // API messages are usually newest first, so reverse to oldest first for merge
+      // 2. Fetch API messages for the first page
+      const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
+
+      // 3. Merge API messages with local messages, de-duplicating and prioritizing statuses
+      const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
 
       const updatedUser = { ...user, messages: mergedMessages }
       setSelectedUser(updatedUser)
@@ -5006,7 +5098,6 @@ function Chat() {
       const response = await axios.get(
         `${BASE_URL}/api/phone/get/message_templates/${wabaId}?accessToken=${accessToken}`,
       )
-
       if (response.data && Array.isArray(response.data.data)) {
         setTemplates(response.data.data)
       } else {
@@ -5212,11 +5303,12 @@ function Chat() {
               components: componentsForApi,
             },
           }
+
           messageToSend = {
             id: messageId,
-            type: MessageType.TEXT, // Still display as text for now
+            type: MessageType.TEMPLATE, // Set type to TEMPLATE for local display
             text: dropdownContent, // Display the filled template content
-            headerImageUrl: headerImageUrlForLocal, // Add header image URL
+            headerImage: headerImageUrlForLocal, // Add header image URL
             isRead: false,
             role: "user",
             timestamp: displayTimestamp,
@@ -5276,7 +5368,12 @@ function Chat() {
                   ...user,
                   messages: user.messages.map((msg) =>
                     msg.id === messageId
-                      ? { ...msg, id: apiReturnedMessageId || msg.id, status: MessageStatus.SENT }
+                      ? {
+                          ...msg,
+                          id: apiReturnedMessageId || msg.id,
+                          status: MessageStatus.SENT,
+                          isLocalMessage: false,
+                        }
                       : msg,
                   ),
                 }
@@ -5336,6 +5433,7 @@ function Chat() {
         } catch (e) {
           console.error("Error parsing template components:", e)
         }
+
         const bodyComponent = componentsArray.find((comp) => comp.type === "BODY")
         const bodyText = bodyComponent?.text || ""
         setOriginalTemplateBody(bodyText)
@@ -5377,6 +5475,7 @@ function Chat() {
     setTemplateBodyParameters((prev) => {
       const newParams = [...prev]
       newParams[index] = value
+
       // Update dropdownContent to reflect changes in parameters for preview
       if (selectedTemplateObject) {
         let componentsArray = []
@@ -5661,9 +5760,9 @@ function Chat() {
               const fullName = `${user.firstName} ${user.lastName}`.toLowerCase()
               return fullName.includes(searchTerm.toLowerCase())
             })
-            .map((user, index) => (
+            .map((user) => (
               <div
-                key={generateUserKey(user, index)}
+                key={generateUserKey(user)} // Use stable key
                 onClick={() => handleUserSelect(user)}
                 className="flex justify-between items-start gap-2 sm:gap-3 cursor-pointer hover:bg-gray-100 p-2 rounded-md"
               >
@@ -5761,7 +5860,7 @@ function Chat() {
                 //     getMessageDate(msg.sentAt) !== getMessageDate(selectedUser.messages[index - 1].sentAt) ? (
                 //       <DateSeparator date={msg.sentAt} />
                 //     ) : null}
-                //     <MessageRenderer message={msg} userList={userList} />
+                //     <MessageRenderer message={msg} />
                 //   </div>
                 // ))
                 selectedUser.messages.map((msg, index) => (
@@ -5770,6 +5869,7 @@ function Chat() {
                     <MessageRenderer message={msg} userList={userList} />
                   </div>
                 ))
+                
               )}
             </div>
 
@@ -5887,7 +5987,7 @@ function Chat() {
         ) : (
           <div className="flex flex-col items-center justify-center flex-1 p-4">
             <img
-              src="/chat.svg"
+              src="/placeholder.svg?height=160&width=160"
               alt="WhatsApp"
               className="hidden sm:block w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 mb-4 sm:mb-6"
             />

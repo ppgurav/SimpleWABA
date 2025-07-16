@@ -4750,16 +4750,16 @@
     //         return {}
     //       }
     //     })()
-        // const templateId = apiMessage.phone_number_id || "361462453714220"
-        // const templateName = parsed.name || "unknown_template"
-        // let templateData = {}
-        // try {
-        //   const res = await fetch(
-        //     `https://waba.mpocket.in/api/phone/get/message_template/${templateId}/${templateName}`,
-        //   )
-        //   const json = await res.json()
-        //   console.log("✅ Full API Response:", JSON.stringify(json, null, 2))
-        //   templateData = Array.isArray(json.data) ? json.data[0] : json.data || {}
+    //     const templateId = apiMessage.phone_number_id || "361462453714220"
+    //     const templateName = parsed.name || "unknown_template"
+    //     let templateData = {}
+    //     try {
+    //       const res = await fetch(
+    //         `https://waba.mpocket.in/api/phone/get/message_template/${templateId}/${templateName}`,
+    //       )
+    //       const json = await res.json()
+    //       console.log("✅ Full API Response:", JSON.stringify(json, null, 2))
+    //       templateData = Array.isArray(json.data) ? json.data[0] : json.data || {}
     //     } catch (err) {
     //       console.error("❌ Template fetch failed:", err)
     //     }
