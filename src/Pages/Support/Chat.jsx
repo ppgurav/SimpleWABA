@@ -2398,7 +2398,8 @@
 
 
 
-"use client"
+
+
 
 import {
   Mic,
@@ -2726,44 +2727,56 @@ const formatBytes = (bytes, decimals = 2) => {
   return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i]
 }
 
-const TemplateMessage = ({ message, position }) => (
-  <div
-    className={`${
-      position === "left" ? incomingMessageClasses : outgoingMessageClasses
-    } p-2 md:p-3 rounded-xl max-w-xs md:max-w-sm relative`}
-  >
-    {message.headerImage && (
-      <img
-        src={message.headerImage || "/placeholder.svg?height=240&width=240"}
-        alt="Header"
-        className="w-full object-cover rounded-t-xl"
-        onError={(e) => {
-          e.target.src = "/placeholder.svg?height=240&width=240"
-        }}
-      />
-    )}
-    <div className="p-3">
-      <div
-        dangerouslySetInnerHTML={{ __html: formatText(message.bodyText, "template") }}
-        className="text-sm whitespace-pre-wrap break-words"
-      />
-      {/* Display template buttons */}
-      {message.buttons && message.buttons.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-3">
-          {message.buttons.map((button, btnIndex) => (
-            <button
-              key={btnIndex}
-              className="px-3 py-1.5 border border-blue-500 text-blue-500 rounded-md text-xs hover:bg-blue-50 cursor-pointer"
-            >
-              {button.text}
-            </button>
-          ))}
-        </div>
+const TemplateMessage = ({ message, position }) => {
+  const handleButtonClick = (button) => {
+    if (button.type === "PHONE_NUMBER" && button.phone_number) {
+      window.open(`tel:${button.phone_number}`, "_self")
+    } else if (button.type === "URL" && button.url) {
+      window.open(button.url, "_blank")
+    }
+  }
+
+  return (
+    <div
+      className={`${
+        position === "left" ? incomingMessageClasses : outgoingMessageClasses
+      } p-2 md:p-3 rounded-xl max-w-xs md:max-w-sm relative`}
+    >
+      {message.headerImage && (
+        <img
+          src={message.headerImage || "/placeholder.svg?height=240&width=240"}
+          alt="Header"
+          className="w-full object-cover rounded-t-xl mb-2"
+          onError={(e) => {
+            e.target.src = "/placeholder.svg?height=240&width=240"
+          }}
+        />
       )}
+      <div className="p-1">
+        <div
+          dangerouslySetInnerHTML={{ __html: formatText(message.bodyText, "template") }}
+          className="text-sm whitespace-pre-wrap break-words mb-2"
+        />
+        {/* Display template buttons */}
+        {message.buttons && message.buttons.length > 0 && (
+          <div className="flex flex-col gap-2 mt-3">
+            {message.buttons.map((button, btnIndex) => (
+              <button
+                key={btnIndex}
+                onClick={() => handleButtonClick(button)}
+                className="px-3 py-2 border border-blue-500 text-white bg-blue-600 rounded-md text-sm hover:bg-blue-50 cursor-pointer flex items-center justify-center gap-2 transition-colors"
+              >
+                {button.type === "PHONE_NUMBER" && <Phone size={16} />}
+                {button.text}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
     </div>
-    <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
-  </div>
-)
+  )
+}
 
 const VideoMessage = ({ message, position }) => (
   <div
@@ -3269,6 +3282,8 @@ function Chat() {
           buttons = buttonsComponent.buttons.map((btn) => ({
             text: btn.text,
             type: btn.type,
+            phone_number: btn.phone_number,
+            url: btn.url,
           }))
         }
         return {
@@ -3279,7 +3294,7 @@ function Chat() {
           bodyText: filledBody,
           footerText,
           headerImage,
-          buttons, // Add buttons to the message
+          buttons,
         }
       }
       case "video":
@@ -3795,6 +3810,8 @@ function Chat() {
           buttons = buttonsComponent.buttons.map((btn) => ({
             text: btn.text,
             type: btn.type,
+            phone_number: btn.phone_number,
+            url: btn.url,
           }))
         }
         if (sendAsPlainText) {
@@ -4243,12 +4260,13 @@ function Chat() {
                                 )
                               } else if (comp.type === "BUTTONS" && comp.buttons?.length > 0) {
                                 return (
-                                  <div key={compIndex} className="flex flex-wrap gap-2 mt-2">
+                                  <div key={compIndex} className="flex flex-col gap-2 mt-2">
                                     {comp.buttons.map((button, btnIndex) => (
                                       <button
                                         key={btnIndex}
-                                        className="px-3 py-1.5 border border-blue-500 text-blue-500 rounded-md text-xs hover:bg-blue-50"
+                                        className="px-3 py-2 border border-blue-500 text-blue-600 bg-white rounded-md text-sm hover:bg-blue-50 flex items-center justify-center gap-2"
                                       >
+                                        {button.type === "PHONE_NUMBER" && <Phone size={16} />}
                                         {button.text}
                                       </button>
                                     ))}
