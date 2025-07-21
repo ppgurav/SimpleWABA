@@ -361,7 +361,7 @@ function Campaign() {
       }
   
       try {
-        const response = await axios.get(`http://localhost:3001/api/campaigns/${wabaId}`, {
+        const response = await axios.get(``, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
