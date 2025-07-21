@@ -2401,8 +2401,6 @@
 
 
 
-"use client"
-
 import {
   Mic,
   Menu,
@@ -2854,12 +2852,10 @@ const getStatusOrder = (status) => {
 
 const mergeMessages = (newMessages, existingMessages) => {
   const uniqueMessagesMap = new Map()
-
   // Add existing messages first
   existingMessages.forEach((msg) => {
     uniqueMessagesMap.set(msg.id, msg)
   })
-
   // Add new messages, updating existing ones if needed
   newMessages.forEach((newMessage) => {
     const existing = uniqueMessagesMap.get(newMessage.id)
@@ -2874,7 +2870,6 @@ const mergeMessages = (newMessages, existingMessages) => {
       uniqueMessagesMap.set(newMessage.id, newMessage)
     }
   })
-
   // Sort messages by timestamp
   return Array.from(uniqueMessagesMap.values()).sort((a, b) => {
     return (a.sentAt || 0) - (b.sentAt || 0)
@@ -2909,6 +2904,7 @@ function Chat() {
   const videoInputRef = useRef(null)
   const documentInputRef = useRef(null)
   const scrollTimeoutRef = useRef(null)
+  const attachmentMenuRef = useRef(null)
 
   // Popup functionality states
   const [showPopup, setShowPopup] = useState(false)
@@ -3315,8 +3311,8 @@ function Chat() {
         })
 
         const footerText = components.find((c) => c.type?.toLowerCase() === "footer")?.text || ""
-        const headerComponent = components.find((c) => c.type?.toLowerCase() === "header")
 
+        const headerComponent = components.find((c) => c.type?.toLowerCase() === "header")
         let headerImage = null
         if (headerComponent && headerComponent.format === "IMAGE" && headerComponent.example?.header_handle?.[0]) {
           headerImage = headerComponent.example.header_handle[0]
@@ -3452,6 +3448,7 @@ function Chat() {
 
       const updatedUsers = userList.map((u) => (u.id === selectedUser.id ? updatedUser : u))
       setUserList(updatedUsers)
+
       setCurrentPage(nextPage)
 
       // Preserve scroll position after DOM update
@@ -3769,6 +3766,7 @@ function Chat() {
       const localMessagesForUser = storedUser ? storedUser.messages : []
 
       const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
+
       const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
 
       const updatedUser = { ...user, messages: mergedMessages }
@@ -4174,7 +4172,6 @@ function Chat() {
             .map((_, i) => {
               return templateExampleParams[i] !== undefined ? templateExampleParams[i] : ""
             })
-
           setTemplateBodyParameters(initialParams)
 
           let previewText = bodyText
@@ -4210,7 +4207,6 @@ function Chat() {
 
         const bodyComponent = componentsArray.find((comp) => comp.type === "BODY")
         let previewText = bodyComponent?.text || ""
-
         newParams.forEach((paramValue, i) => {
           previewText = previewText.replace(new RegExp(`\\{\\{${i + 1}\\}\\}`, "g"), paramValue)
         })
@@ -4225,9 +4221,10 @@ function Chat() {
     setCustomHeaderImageUrl(e.target.value)
   }
 
+  // Fixed useEffect for handling click outside - now properly targets the attachment menu
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isOpen && !event.target.closest(".attachment-menu-container")) {
+      if (isOpen && attachmentMenuRef.current && !attachmentMenuRef.current.contains(event.target)) {
         setIsOpen(false)
       }
     }
@@ -4282,7 +4279,6 @@ function Chat() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-xl shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">Select Template</h3>
-
             {/* Dropdown */}
             <div className="mb-4">
               <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-2">
@@ -4315,7 +4311,6 @@ function Chat() {
                 />
               </div>
             </div>
-
             {/* Custom Image URL Input - Show only for templates with image headers */}
             {showImageUrlInput && selectedTemplateObject && (
               <div className="mb-4">
@@ -4341,7 +4336,6 @@ function Chat() {
                 )}
               </div>
             )}
-
             {/* Content area that shows when dropdown is selected */}
             {showDropdown && (
               <div className="mb-4">
@@ -4369,7 +4363,6 @@ function Chat() {
                           console.error("Error parsing template components for preview:", e)
                           return <p className="text-red-500 text-xs">Error loading template preview.</p>
                         }
-
                         return (
                           <>
                             {componentsArray.map((comp, compIndex) => {
@@ -4452,7 +4445,6 @@ function Chat() {
                 )}
               </div>
             )}
-
             {/* Buttons */}
             <div className="flex justify-end gap-3">
               <button
@@ -4628,8 +4620,9 @@ function Chat() {
                   const position = isMessageFromContact ? "left" : "right"
 
                   return (
+                    
                     <div key={generateMessageKey(msg)} className="relative group">
-                      {showDateSeparator && <DateSeparator date={msg.sentAt} />}
+                      {/* {showDateSeparator && <DateSeparator date={msg.sentAt} />} */}
                       <MessageRenderer message={msg} position={position} />
                     </div>
                   )
@@ -4640,14 +4633,14 @@ function Chat() {
             <div className="p-2 sm:p-3 md:p-4 border-t flex flex-col gap-2">
               <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-full px-2 sm:px-3 py-1.5 sm:py-2">
                 <div className="flex items-center gap-1 sm:gap-2">
-                  <div className="relative attachment-menu-container">
+                  <div className="relative">
                     <button className="text-gray-500 hover:text-blue-600 p-2 rounded-full" onClick={handlePlusClick}>
                       <Plus size={18} className="sm:w-5 sm:h-5" />
                     </button>
                   </div>
-                  <div className="relative inline-block text-left attachment-menu-container">
+                  <div className="relative inline-block text-left" ref={attachmentMenuRef}>
                     <button
-                      className="text-gray-500 hover:text-blue-600 p-2 rounded-full"
+                      className="text-gray-500 hover:text-blue-600 p-2 rounded-full transition-colors duration-200"
                       onClick={toggleAttachmentMenu3}
                       disabled={uploadingFile}
                     >
@@ -4827,4 +4820,3 @@ function Chat() {
 }
 
 export default Chat
-
