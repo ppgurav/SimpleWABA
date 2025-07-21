@@ -2401,6 +2401,8 @@
 
 
 
+"use client"
+
 import {
   Mic,
   Menu,
@@ -2420,6 +2422,7 @@ import {
   VideoIcon,
   FileIcon,
   ChevronDown,
+  Paperclip,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
@@ -2764,9 +2767,10 @@ const TemplateMessage = ({ message, position }) => {
               <button
                 key={btnIndex}
                 onClick={() => handleButtonClick(button)}
-                className="px-3 py-2 border border-blue-500 text-white bg-blue-600 rounded-md text-sm hover:bg-blue-50 cursor-pointer flex items-center justify-center gap-2 transition-colors"
+                className="px-3 py-2 border border-blue-500 text-white bg-blue-600 rounded-md text-sm hover:bg-blue-700 cursor-pointer flex items-center justify-center gap-2 transition-colors"
               >
                 {button.type === "PHONE_NUMBER" && <Phone size={16} />}
+                {button.type === "URL" && <Paperclip size={16} className="text-gray-200" />}
                 {button.text}
               </button>
             ))}
@@ -2817,6 +2821,7 @@ const MessageRenderer = ({ message, position }) => {
         return TextMessage
     }
   })()
+
   return (
     <div className={`flex ${position === "left" ? "justify-start" : "justify-end"} mb-2 sm:mb-3`}>
       <Component message={message} position={position} />
@@ -2849,9 +2854,13 @@ const getStatusOrder = (status) => {
 
 const mergeMessages = (newMessages, existingMessages) => {
   const uniqueMessagesMap = new Map()
+
+  // Add existing messages first
   existingMessages.forEach((msg) => {
     uniqueMessagesMap.set(msg.id, msg)
   })
+
+  // Add new messages, updating existing ones if needed
   newMessages.forEach((newMessage) => {
     const existing = uniqueMessagesMap.get(newMessage.id)
     if (existing) {
@@ -2865,6 +2874,8 @@ const mergeMessages = (newMessages, existingMessages) => {
       uniqueMessagesMap.set(newMessage.id, newMessage)
     }
   })
+
+  // Sort messages by timestamp
   return Array.from(uniqueMessagesMap.values()).sort((a, b) => {
     return (a.sentAt || 0) - (b.sentAt || 0)
   })
@@ -2898,11 +2909,13 @@ function Chat() {
   const videoInputRef = useRef(null)
   const documentInputRef = useRef(null)
   const scrollTimeoutRef = useRef(null)
+
   // Popup functionality states
   const [showPopup, setShowPopup] = useState(false)
   const [selectedOption, setSelectedOption] = useState("")
   const [showDropdown, setShowDropdown] = useState(false)
   const [dropdownContent, setDropdownContent] = useState("")
+
   // Template fetching states
   const [templates, setTemplates] = useState([])
   const [loadingTemplates, setLoadingTemplates] = useState(false)
@@ -2910,6 +2923,7 @@ function Chat() {
   const [selectedTemplateObject, setSelectedTemplateObject] = useState(null)
   const [originalTemplateBody, setOriginalTemplateBody] = useState("")
   const [templateBodyParameters, setTemplateBodyParameters] = useState([])
+
   // NEW: Custom header image states
   const [customHeaderImageUrl, setCustomHeaderImageUrl] = useState("")
   const [showImageUrlInput, setShowImageUrlInput] = useState(false)
@@ -2919,10 +2933,12 @@ function Chat() {
   const handleFileSend = async (e, type) => {
     const file = e.target.files[0]
     if (!file) return
+
     setUploadingFile(true)
     const messageId = `file-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const displayTimestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     const numericTimestamp = Date.now()
+
     const newFileMessage = {
       id: messageId,
       type: type,
@@ -2943,7 +2959,9 @@ function Chat() {
       sentAt: numericTimestamp,
       sender: OUR_OWN_PHONE_NUMBER,
     }
+
     const wasNearBottom = checkIfNearBottom()
+
     setUserList((prevUsers) => {
       const updatedUsers = prevUsers.map((user) =>
         user.id === selectedUser.id
@@ -2958,11 +2976,13 @@ function Chat() {
       saveMessagesToStorage(updatedUsers)
       return updatedUsers
     })
+
     if (wasNearBottom) {
       setTimeout(() => {
         scrollToBottom(true)
       }, 100)
     }
+
     try {
       if (!selectedUser?.wa_id_or_sender) {
         alert("Please select a user to send message")
@@ -2982,13 +3002,17 @@ function Chat() {
         )
         return
       }
+
       let phoneNumber = selectedUser.waId || selectedUser.phone || ""
       if (phoneNumber.startsWith("+")) phoneNumber = phoneNumber.slice(1)
       phoneNumber = phoneNumber.replace(/[^\d]/g, "")
+
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
+
       const formData = new FormData()
       formData.append("file", file)
+
       const uploadResponse = await fetch(`${BASE_URL}/api/${wabaId}/upload-file`, {
         method: "POST",
         headers: {
@@ -2996,32 +3020,40 @@ function Chat() {
         },
         body: formData,
       })
+
       if (!uploadResponse.ok) {
         const err = await uploadResponse.json()
         alert(`Upload failed: ${err?.message || "Unknown error"}`)
         throw new Error(`Upload failed: ${err?.message || "Unknown error"}`)
       }
+
       const uploadResult = await uploadResponse.json()
       const uploadedUrl = uploadResult.data?.s3Url || uploadResult?.s3Url
+
       if (!uploadedUrl) {
         alert("Upload failed: No media URL returned")
         throw new Error("Upload failed: No media URL returned")
       }
+
       const mediaObject = {
         link: uploadedUrl,
       }
+
       if (type === "image" || type === "video") {
         mediaObject.caption = file.name
       }
+
       if (type === "document") {
         mediaObject.filename = file.name
       }
+
       const messageBody = {
         messaging_product: "whatsapp",
         to: phoneNumber,
         type,
         [type]: mediaObject,
       }
+
       const sendMessageResponse = await fetch(`${BASE_URL}/api/${wabaId}/messages`, {
         method: "POST",
         headers: {
@@ -3030,7 +3062,9 @@ function Chat() {
         },
         body: JSON.stringify(messageBody),
       })
+
       const sendMessageResult = await sendMessageResponse.json()
+
       if (!sendMessageResponse.ok || !sendMessageResult.messages?.length) {
         alert(
           `Send message failed: ${
@@ -3043,7 +3077,9 @@ function Chat() {
           }`,
         )
       }
+
       const apiReturnedMessageId = sendMessageResult.messages[0].id
+
       setUserList((prevUsers) => {
         const updatedUsers = prevUsers.map((user) =>
           user.id === selectedUser.id
@@ -3071,6 +3107,7 @@ function Chat() {
         saveMessagesToStorage(updatedUsers)
         return updatedUsers
       })
+
       simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       setIsOpen(false)
     } catch (error) {
@@ -3200,6 +3237,7 @@ function Chat() {
     const role = apiMessage.sender !== null ? "user" : "assistant"
     const messageId = apiMessage.id || `api-temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const senderIdentifier = apiMessage.sender || selectedUser?.wa_id_or_sender
+
     const commonProps = {
       id: messageId,
       isRead: apiMessage.read === 1,
@@ -3210,6 +3248,7 @@ function Chat() {
       isLocalMessage: false,
       sender: senderIdentifier,
     }
+
     switch (apiMessage.message_type) {
       case "text":
         return {
@@ -3244,8 +3283,10 @@ function Chat() {
             return {}
           }
         })()
+
         const templateId = apiMessage.phone_number_id || "361462453714220"
         const templateName = parsed.name || "unknown_template"
+
         let templateData = {}
         try {
           const res = await fetch(`${BASE_URL}/api/phone/get/message_template/${templateId}/${templateName}`)
@@ -3254,6 +3295,7 @@ function Chat() {
         } catch (err) {
           console.error("❌ Template fetch failed:", err)
         }
+
         let components = []
         try {
           components =
@@ -3263,18 +3305,23 @@ function Chat() {
         } catch (e) {
           console.error("❌ Failed to parse components:", e)
         }
+
         const bodyComponent = components.find((c) => c.type?.toLowerCase() === "body")
         const bodyTemplate = bodyComponent?.text || "Template"
         const bodyParamsFromApi = parsed.components?.find((c) => c.type?.toLowerCase() === "body")?.parameters || []
+
         const filledBody = bodyTemplate.replace(/\{\{(\d+)\}\}/g, (_, idx) => {
           return bodyParamsFromApi[+idx - 1]?.text || ""
         })
+
         const footerText = components.find((c) => c.type?.toLowerCase() === "footer")?.text || ""
         const headerComponent = components.find((c) => c.type?.toLowerCase() === "header")
+
         let headerImage = null
         if (headerComponent && headerComponent.format === "IMAGE" && headerComponent.example?.header_handle?.[0]) {
           headerImage = headerComponent.example.header_handle[0]
         }
+
         // Extract buttons from template
         const buttonsComponent = components.find((c) => c.type?.toLowerCase() === "buttons")
         let buttons = []
@@ -3286,6 +3333,7 @@ function Chat() {
             url: btn.url,
           }))
         }
+
         return {
           ...commonProps,
           type: MessageType.TEMPLATE,
@@ -3322,17 +3370,23 @@ function Chat() {
       } else {
         setLoadingMoreMessages(true)
       }
+
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+
       if (!wabaId || !accessToken) {
         throw new Error("Missing authentication data")
       }
+
       const response = await axios.get(`${BASE_URL}/api/phone/get/${wabaId}/${userId}/${page}`)
       console.log(`Messages API Response for page ${page}:`, response.data)
+
       const transformedMessages = Array.isArray(response.data)
         ? await Promise.all(response.data.map((msg) => transformApiMessage(msg)))
         : []
+
       const hasMore = transformedMessages.length > 0
+
       return { messages: transformedMessages, hasMore }
     } catch (error) {
       console.error(`Error fetching messages for page ${page}:`, error?.response?.data || error.message)
@@ -3349,39 +3403,84 @@ function Chat() {
     }
   }
 
+  // FIXED loadMoreMessages function
   const loadMoreMessages = async () => {
     if (!selectedUser || !hasMoreMessages || loadingMoreMessages) return
+
     const container = messagesContainerRef.current
     if (!container) return
+
+    // Store current scroll position and height
     const previousScrollHeight = container.scrollHeight
+    const previousScrollTop = container.scrollTop
+
     const nextPage = currentPage + 1
     setLoadingMoreMessages(true)
+
     const { messages: newApiMessages, hasMore } = await fetchUserMessages(selectedUser.wa_id_or_sender, nextPage, true)
+
     if (newApiMessages.length > 0) {
-      const mergedAndDedupedMessages = mergeMessages(newApiMessages, selectedUser.messages)
+      // Merge messages properly - new messages should be added to the beginning
+      const currentMessages = selectedUser.messages || []
+
+      // Create a map to avoid duplicates
+      const messageMap = new Map()
+
+      // Add new messages first (older messages)
+      newApiMessages.forEach((msg) => {
+        messageMap.set(msg.id, msg)
+      })
+
+      // Add existing messages (newer messages)
+      currentMessages.forEach((msg) => {
+        if (!messageMap.has(msg.id)) {
+          messageMap.set(msg.id, msg)
+        }
+      })
+
+      // Convert back to array and sort by timestamp
+      const mergedMessages = Array.from(messageMap.values()).sort((a, b) => {
+        return (a.sentAt || 0) - (b.sentAt || 0)
+      })
+
       const updatedUser = {
         ...selectedUser,
-        messages: mergedAndDedupedMessages,
+        messages: mergedMessages,
       }
+
       setSelectedUser(updatedUser)
+
       const updatedUsers = userList.map((u) => (u.id === selectedUser.id ? updatedUser : u))
       setUserList(updatedUsers)
       setCurrentPage(nextPage)
+
+      // Preserve scroll position after DOM update
       setTimeout(() => {
-        preserveScrollPosition(previousScrollHeight)
+        if (container) {
+          const newScrollHeight = container.scrollHeight
+          const heightDifference = newScrollHeight - previousScrollHeight
+          container.scrollTop = previousScrollTop + heightDifference
+        }
       }, 50)
     }
+
     setHasMoreMessages(hasMore)
     setLoadingMoreMessages(false)
   }
 
   const handleScroll = () => {
     if (loadingMoreMessages || !hasMoreMessages) return
+
     const container = messagesContainerRef.current
     if (!container) return
+
+    // Load more messages when scrolled to top
     if (container.scrollTop === 0) {
       loadMoreMessages()
     }
+
+    // Check if user is near bottom for auto-scroll behavior
+    checkIfNearBottom()
   }
 
   useEffect(() => {
@@ -3390,7 +3489,7 @@ function Chat() {
       container.addEventListener("scroll", handleScroll)
       return () => container.removeEventListener("scroll", handleScroll)
     }
-  }, [selectedUser?.wa_id_or_sender, hasMoreMessages, loadingMoreMessages, isScrolling, currentPage])
+  }, [selectedUser?.wa_id_or_sender, hasMoreMessages, loadingMoreMessages, currentPage])
 
   useEffect(() => {
     if (selectedUser && selectedUser.messages && shouldScrollToBottom && isNearBottom) {
@@ -3402,14 +3501,18 @@ function Chat() {
     try {
       setLoading(true)
       setError(null)
+
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+
       if (!wabaId || !accessToken) {
         console.error("Missing waba_id or auth_token in sessionStorage")
         throw new Error("Missing authentication data")
       }
+
       const response = await axios.get(`${BASE_URL}/api/phone/get/chats/${wabaId}?accessToken=${accessToken}`)
       console.log("API Response:", response.data)
+
       const transformedData = Array.isArray(response.data)
         ? response.data.map((chat, index) => {
             const { firstName, lastName } = parseContactName(chat.contact_name)
@@ -3434,7 +3537,9 @@ function Chat() {
             }
           })
         : []
+
       console.log("Transformed Data:", transformedData)
+
       const storedUsers = loadMessagesFromStorage()
       const mergedUsers = transformedData.map((apiUser) => {
         const storedUser = storedUsers.find((stored) => stored.wa_id_or_sender === apiUser.wa_id_or_sender)
@@ -3443,10 +3548,12 @@ function Chat() {
         }
         return apiUser
       })
+
       setUserList(mergedUsers)
     } catch (error) {
       console.error("Error fetching chats:", error?.response?.data || error.message)
       setError("Failed to load chats. Please try again.")
+
       const storedUsers = loadMessagesFromStorage()
       if (storedUsers.length > 0) {
         setUserList(storedUsers)
@@ -3495,6 +3602,7 @@ function Chat() {
       setIsMobile(mobile)
       setShowSidebar(!mobile || !selectedUser ? true : false)
     }
+
     checkScreenSize()
     window.addEventListener("resize", checkScreenSize)
     return () => window.removeEventListener("resize", checkScreenSize)
@@ -3517,6 +3625,7 @@ function Chat() {
         return newUsers
       })
     }
+
     setTimeout(() => updateMessageStatus(MessageStatus.SENT), 500)
     setTimeout(() => updateMessageStatus(MessageStatus.DELIVERED), 2000)
     setTimeout(() => updateMessageStatus(MessageStatus.READ), 5000)
@@ -3524,9 +3633,11 @@ function Chat() {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return
+
     const messageId = `new-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const displayTimestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     const numericTimestamp = Date.now()
+
     const newMsg = {
       id: messageId,
       type: MessageType.TEXT,
@@ -3539,7 +3650,9 @@ function Chat() {
       isLocalMessage: true,
       sender: OUR_OWN_PHONE_NUMBER,
     }
+
     const wasNearBottom = checkIfNearBottom()
+
     setUserList((prevUsers) => {
       const updatedUsers = prevUsers.map((user) =>
         user.id === selectedUser.id
@@ -3554,20 +3667,25 @@ function Chat() {
       saveMessagesToStorage(updatedUsers)
       return updatedUsers
     })
+
     if (wasNearBottom) {
       setTimeout(() => {
         scrollToBottom(true)
       }, 100)
     }
+
     setNewMessage("")
+
     try {
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
+
       let phoneNumber = selectedUser.wa_id_or_sender || ""
       if (phoneNumber.startsWith("+")) {
         phoneNumber = phoneNumber.substring(1)
       }
       phoneNumber = phoneNumber.replace(/[^\d]/g, "")
+
       const requestBody = {
         messaging_product: "whatsapp",
         to: phoneNumber,
@@ -3576,6 +3694,7 @@ function Chat() {
           body: newMessage,
         },
       }
+
       const res = await fetch(`${BASE_URL}/api/${wabaId}/messages`, {
         method: "POST",
         headers: {
@@ -3584,12 +3703,14 @@ function Chat() {
         },
         body: JSON.stringify(requestBody),
       })
+
       if (!res.ok) {
         const errorText = await res.text()
         throw new Error(`Failed to send message: ${res.status} - ${errorText}`)
       } else {
         const result = await res.json()
         const apiReturnedMessageId = result.messages?.[0]?.id
+
         setUserList((prevUsers) => {
           const updatedUsers = prevUsers.map((user) =>
             user.id === selectedUser.id
@@ -3613,6 +3734,7 @@ function Chat() {
           saveMessagesToStorage(updatedUsers)
           return updatedUsers
         })
+
         simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       }
     } catch (error) {
@@ -3640,15 +3762,19 @@ function Chat() {
     setHasMoreMessages(true)
     setShouldScrollToBottom(true)
     setIsNearBottom(true)
+
     if (user.wa_id_or_sender) {
       const storedUsers = loadMessagesFromStorage()
       const storedUser = storedUsers.find((u) => u.wa_id_or_sender === user.wa_id_or_sender)
       const localMessagesForUser = storedUser ? storedUser.messages : []
+
       const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
       const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
+
       const updatedUser = { ...user, messages: mergedMessages }
       setSelectedUser(updatedUser)
       setHasMoreMessages(hasMore)
+
       const updatedUsers = userList.map((u) => (u.id === user.id ? updatedUser : u))
       setUserList(updatedUsers)
       saveMessagesToStorage(updatedUsers)
@@ -3667,12 +3793,15 @@ function Chat() {
     try {
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+
       if (!wabaId || !accessToken) {
         throw new Error("Missing authentication data for templates")
       }
+
       const response = await axios.get(
         `${BASE_URL}/api/phone/get/message_templates/${wabaId}?accessToken=${accessToken}`,
       )
+
       if (response.data && Array.isArray(response.data.data)) {
         setTemplates(response.data.data)
       } else {
@@ -3718,25 +3847,31 @@ function Chat() {
       alert("Please select a user to send message.")
       return
     }
+
     let phoneNumber = selectedUser.wa_id_or_sender || ""
     if (phoneNumber.startsWith("+")) {
       phoneNumber = phoneNumber.substring(1)
     }
     phoneNumber = phoneNumber.replace(/[^\d]/g, "")
+
     const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
     const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
+
     const messageId = `popup-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const displayTimestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
     const numericTimestamp = Date.now()
+
     let requestBody = {}
     let messageToSend = {}
     let headerImageUrlForLocal = null
+
     try {
       if (selectedOption === "custom") {
         if (!dropdownContent.trim()) {
           alert("Custom message cannot be empty.")
           return
         }
+
         requestBody = {
           messaging_product: "whatsapp",
           to: phoneNumber,
@@ -3745,6 +3880,7 @@ function Chat() {
             body: dropdownContent,
           },
         }
+
         messageToSend = {
           id: messageId,
           type: MessageType.TEXT,
@@ -3785,12 +3921,15 @@ function Chat() {
             sender: OUR_OWN_PHONE_NUMBER,
           }
         }
+
         const bodyComponent = componentsArray.find((comp) => comp.type === "BODY")
         const originalBodyText = bodyComponent?.text || ""
+
         if (templateBodyParameters.length > 0 && templateBodyParameters.some((param) => param.trim() === "")) {
           alert("Please fill all template parameters.")
           return
         }
+
         let sendAsPlainText = false
         if (templateBodyParameters.length > 0) {
           let currentPreviewText = originalBodyText
@@ -3803,6 +3942,7 @@ function Chat() {
         } else if (dropdownContent !== originalBodyText) {
           sendAsPlainText = true
         }
+
         // Extract buttons from template
         const buttonsComponent = componentsArray.find((comp) => comp.type === "BUTTONS")
         let buttons = []
@@ -3814,6 +3954,7 @@ function Chat() {
             url: btn.url,
           }))
         }
+
         if (sendAsPlainText) {
           requestBody = {
             messaging_product: "whatsapp",
@@ -3837,6 +3978,7 @@ function Chat() {
           }
         } else {
           const componentsForApi = []
+
           const headerComponent = componentsArray.find((comp) => comp.type === "HEADER")
           if (headerComponent) {
             if (headerComponent.format === "IMAGE") {
@@ -3851,12 +3993,14 @@ function Chat() {
               }
             }
           }
+
           if (bodyComponent && templateBodyParameters.length > 0) {
             componentsForApi.push({
               type: "body",
               parameters: templateBodyParameters.map((param) => ({ type: "text", text: param })),
             })
           }
+
           requestBody = {
             messaging_product: "whatsapp",
             to: phoneNumber,
@@ -3869,6 +4013,7 @@ function Chat() {
               components: componentsForApi,
             },
           }
+
           messageToSend = {
             id: messageId,
             type: MessageType.TEMPLATE,
@@ -3888,7 +4033,9 @@ function Chat() {
         alert("Please select a template or type a custom message.")
         return
       }
+
       const wasNearBottom = checkIfNearBottom()
+
       setUserList((prevUsers) => {
         const updatedUsers = prevUsers.map((user) =>
           user.id === selectedUser.id
@@ -3903,11 +4050,13 @@ function Chat() {
         saveMessagesToStorage(updatedUsers)
         return updatedUsers
       })
+
       if (wasNearBottom) {
         setTimeout(() => {
           scrollToBottom(true)
         }, 100)
       }
+
       const res = await fetch(`${BASE_URL}/api/${wabaId}/messages`, {
         method: "POST",
         headers: {
@@ -3916,12 +4065,14 @@ function Chat() {
         },
         body: JSON.stringify(requestBody),
       })
+
       if (!res.ok) {
         const errorText = await res.text()
         throw new Error(`Failed to send message: ${res.status} - ${errorText}`)
       } else {
         const result = await res.json()
         const apiReturnedMessageId = result.messages?.[0]?.id
+
         setUserList((prevUsers) => {
           const updatedUsers = prevUsers.map((user) =>
             user.id === selectedUser.id
@@ -3945,6 +4096,7 @@ function Chat() {
           saveMessagesToStorage(updatedUsers)
           return updatedUsers
         })
+
         simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       }
     } catch (error) {
@@ -3980,9 +4132,11 @@ function Chat() {
     const selectedValue = e.target.value
     setSelectedOption(selectedValue)
     setShowDropdown(true)
+
     // Reset custom image states when changing selection
     setCustomHeaderImageUrl("")
     setShowImageUrlInput(false)
+
     if (selectedValue === "custom") {
       setSelectedTemplateObject(null)
       setDropdownContent("Enter your custom message here...")
@@ -3992,21 +4146,25 @@ function Chat() {
       const template = templates.find((t) => t.name === selectedValue)
       if (template) {
         setSelectedTemplateObject(template)
+
         let componentsArray = []
         try {
           componentsArray = JSON.parse(template.components)
         } catch (e) {
           console.error("Error parsing template components:", e)
         }
+
         // Check if template has header image
         const headerComponent = componentsArray.find((comp) => comp.type === "HEADER")
         if (headerComponent && headerComponent.format === "IMAGE") {
           setShowImageUrlInput(true)
           // Don't pre-fill the custom image URL - leave it empty so user can enter their own
         }
+
         const bodyComponent = componentsArray.find((comp) => comp.type === "BODY")
         const bodyText = bodyComponent?.text || ""
         setOriginalTemplateBody(bodyText)
+
         const variableMatches = [...bodyText.matchAll(/\{\{(\d+)\}\}/g)]
         if (variableMatches.length > 0) {
           const maxVarIndex = Math.max(...variableMatches.map((match) => Number.parseInt(match[1])))
@@ -4016,7 +4174,9 @@ function Chat() {
             .map((_, i) => {
               return templateExampleParams[i] !== undefined ? templateExampleParams[i] : ""
             })
+
           setTemplateBodyParameters(initialParams)
+
           let previewText = bodyText
           initialParams.forEach((paramValue, i) => {
             previewText = previewText.replace(new RegExp(`\\{\\{${i + 1}\\}\\}`, "g"), paramValue)
@@ -4039,6 +4199,7 @@ function Chat() {
     setTemplateBodyParameters((prev) => {
       const newParams = [...prev]
       newParams[index] = value
+
       if (selectedTemplateObject) {
         let componentsArray = []
         try {
@@ -4046,13 +4207,16 @@ function Chat() {
         } catch (e) {
           console.error("Error parsing template components for preview update:", e)
         }
+
         const bodyComponent = componentsArray.find((comp) => comp.type === "BODY")
         let previewText = bodyComponent?.text || ""
+
         newParams.forEach((paramValue, i) => {
           previewText = previewText.replace(new RegExp(`\\{\\{${i + 1}\\}\\}`, "g"), paramValue)
         })
         setDropdownContent(previewText)
       }
+
       return newParams
     })
   }
@@ -4067,6 +4231,7 @@ function Chat() {
         setIsOpen(false)
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [isOpen])
@@ -4117,6 +4282,7 @@ function Chat() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-xl shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">Select Template</h3>
+
             {/* Dropdown */}
             <div className="mb-4">
               <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-2">
@@ -4149,6 +4315,7 @@ function Chat() {
                 />
               </div>
             </div>
+
             {/* Custom Image URL Input - Show only for templates with image headers */}
             {showImageUrlInput && selectedTemplateObject && (
               <div className="mb-4">
@@ -4174,6 +4341,7 @@ function Chat() {
                 )}
               </div>
             )}
+
             {/* Content area that shows when dropdown is selected */}
             {showDropdown && (
               <div className="mb-4">
@@ -4201,6 +4369,7 @@ function Chat() {
                           console.error("Error parsing template components for preview:", e)
                           return <p className="text-red-500 text-xs">Error loading template preview.</p>
                         }
+
                         return (
                           <>
                             {componentsArray.map((comp, compIndex) => {
@@ -4283,6 +4452,7 @@ function Chat() {
                 )}
               </div>
             )}
+
             {/* Buttons */}
             <div className="flex justify-end gap-3">
               <button
@@ -4348,6 +4518,7 @@ function Chat() {
           </div>
           <hr className="border-gray-300" />
         </div>
+
         <div className="overflow-y-auto px-3 sm:px-4 pb-4 space-y-2 sm:space-y-3 flex-1">
           {userList
             .filter((user) => {
@@ -4421,6 +4592,7 @@ function Chat() {
                 <Info size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
+
             <div
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-2 sm:space-y-3 bg-gray-200 text-left"
@@ -4432,6 +4604,7 @@ function Chat() {
                   <span className="ml-2 text-gray-600 text-xs sm:text-sm">Loading more messages...</span>
                 </div>
               )}
+
               {messagesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
@@ -4450,8 +4623,10 @@ function Chat() {
                   const showDateSeparator =
                     index === 0 ||
                     getMessageDate(msg.sentAt) !== getMessageDate(selectedUser.messages[index - 1].sentAt)
+
                   const isMessageFromContact = msg.role === "user" && msg.sender === selectedUser.wa_id_or_sender
                   const position = isMessageFromContact ? "left" : "right"
+
                   return (
                     <div key={generateMessageKey(msg)} className="relative group">
                       {showDateSeparator && <DateSeparator date={msg.sentAt} />}
@@ -4461,6 +4636,7 @@ function Chat() {
                 })
               )}
             </div>
+
             <div className="p-2 sm:p-3 md:p-4 border-t flex flex-col gap-2">
               <div className="flex items-center gap-2 sm:gap-3 bg-white rounded-full px-2 sm:px-3 py-1.5 sm:py-2">
                 <div className="flex items-center gap-1 sm:gap-2">
@@ -4651,3 +4827,4 @@ function Chat() {
 }
 
 export default Chat
+
