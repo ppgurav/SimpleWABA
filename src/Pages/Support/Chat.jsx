@@ -4339,10 +4339,10 @@ function Chat() {
             {/* Content area that shows when dropdown is selected */}
             {showDropdown && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label>
+                {/* <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label> */}
                 {selectedOption === "custom" ? (
                   <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <h4 className="font-medium text-sm text-gray-800 mb-2">Custom Message:</h4>
+                    {/* <h4 className="font-medium text-sm text-gray-800 mb-2">Custom Message:</h4> */}
                     <textarea
                       value={dropdownContent}
                       onChange={(e) => setDropdownContent(e.target.value)}
@@ -4354,7 +4354,7 @@ function Chat() {
                 ) : (
                   selectedTemplateObject && (
                     <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
-                      <h4 className="font-medium text-sm text-gray-800 mb-2">Template Preview:</h4>
+                      {/* <h4 className="font-medium text-sm text-gray-800 mb-2">Template Preview:</h4> */}
                       {(() => {
                         let componentsArray = []
                         try {
@@ -4390,7 +4390,7 @@ function Chat() {
                               } else if (comp.type === "BODY") {
                                 return (
                                   <div key={compIndex} className="mb-2">
-                                    <p className="text-sm text-gray-600 mb-1">Body Preview:</p>
+                                    {/* <p className="text-sm text-gray-600 mb-1">Body Preview:</p> */}
                                     <textarea
                                       value={dropdownContent}
                                       onChange={(e) => setDropdownContent(e.target.value)}
@@ -4399,7 +4399,7 @@ function Chat() {
                                     />
                                     {templateBodyParameters.length > 0 && (
                                       <div className="mt-2 space-y-2">
-                                        <p className="text-sm font-medium text-gray-700">Fill Parameters:</p>
+                                        <p className="text-sm font-medium text-gray-700">Field :</p>
                                         {templateBodyParameters.map((param, paramIndex) => (
                                           <input
                                             key={paramIndex}
