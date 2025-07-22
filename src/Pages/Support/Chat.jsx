@@ -2399,9 +2399,6 @@
 
 
 
-
-
-
 import {
   Mic,
   Menu,
@@ -2410,18 +2407,17 @@ import {
   Plus,
   Phone,
   Calendar,
-  MessageSquareTextIcon,
+  MessageSquareText,
   Clock,
   Download,
   FileMinus,
   Check,
   CheckCheck,
-  PaperclipIcon,
-  ImageIcon,
-  VideoIcon,
-  FileIcon,
-  ChevronDown,
   Paperclip,
+  ImageIcon,
+  Video,
+  File,
+  ChevronDown,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
@@ -2685,45 +2681,8 @@ const ImageMessage = ({ message, position }) => (
   </div>
 )
 
-// const DocumentMessage = ({ message, position }) => (
-//   <div
-//     className={`${
-//       position === "left" ? incomingMessageClasses : outgoingMessageClasses
-//     } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm relative`}
-//   >
-//     <div className="bg-white border border-gray-200 rounded-md p-2 mb-2 flex items-center">
-//       <div className="p-2 rounded-md mr-2">
-//         <FileMinus size={18} className="text-blue-600" />
-//       </div>
-//       <div className="flex-1 min-w-0">
-//         <p className="text-sm font-medium truncate">{message.documentName || message.fileName || "Document"}</p>
-//         <p className="text-xs text-gray-500">{message.documentSize || "Unknown size"}</p>
-//       </div>
-      
-//       <a
-//         href={message.documentUrl || message.mediaUrl}
-//         className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
-//         target="_blank"
-//         rel="noopener noreferrer"
-//       >
-//         <Download size={16} />
-//       </a>
-//     </div>
-//     {message.caption && (
-//       <div
-//         dangerouslySetInnerHTML={{
-//           __html: formatText(message.caption, "document"),
-//         }}
-//         className={`text-sm ${position === "left" ? "text-gray-600" : "text-black"} whitespace-pre-wrap break-words`}
-//       />
-//     )}
-//     <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
-//   </div>
-// )
-
 const DocumentMessage = ({ message, position }) => {
-  // Debug the incoming message
-  console.log("DocumentMessage received:", message);
+  console.log("📄 DocumentMessage received:", message)
 
   return (
     <div
@@ -2737,43 +2696,33 @@ const DocumentMessage = ({ message, position }) => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate">
-            {message.documentName || message.fileName || "Document"}
+            {message.documentName || message.fileName || message.caption || "Document"}
           </p>
-          <p className="text-xs text-gray-500">
-            {message.documentSize || "Unknown size"}
-          </p>
+          <p className="text-xs text-gray-500">{message.documentSize || "Unknown size"}</p>
         </div>
-
-        <a
-          href={message.documentUrl || message.mediaUrl}
-          className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Download size={16} />
-        </a>
+        {(message.documentUrl || message.mediaUrl) && message.documentUrl !== "#" && (
+          <a
+            href={message.documentUrl || message.mediaUrl}
+            className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download size={16} />
+          </a>
+        )}
       </div>
-
-      {message.caption && (
+      {message.caption && message.caption !== (message.documentName || message.fileName) && (
         <div
           dangerouslySetInnerHTML={{
             __html: formatText(message.caption, "document"),
           }}
-          className={`text-sm ${
-            position === "left" ? "text-gray-600" : "text-black"
-          } whitespace-pre-wrap break-words`}
+          className={`text-sm ${position === "left" ? "text-gray-600" : "text-black"} whitespace-pre-wrap break-words`}
         />
       )}
-
-      <MessageTicks
-        status={message.status}
-        timestamp={message.timestamp}
-        position={position}
-      />
+      <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
     </div>
-  );
-};
-
+  )
+}
 
 const formatBytes = (bytes, decimals = 2) => {
   if (bytes === 0) return "0 Bytes"
@@ -2814,7 +2763,6 @@ const TemplateMessage = ({ message, position }) => {
           dangerouslySetInnerHTML={{ __html: formatText(message.bodyText, "template") }}
           className="text-sm whitespace-pre-wrap break-words mb-2"
         />
-        {/* Display template buttons */}
         {message.buttons && message.buttons.length > 0 && (
           <div className="flex flex-col gap-2 mt-3">
             {message.buttons.map((button, btnIndex) => (
@@ -2887,9 +2835,14 @@ const generateMessageKey = (message) => {
   return message.id || `temp-msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
+// const generateUserKey = (user) => {
+//   return user.id || user.waId || `temp-user-${Math.random().toString(36).substr(2, 9)}`
+// }
 const generateUserKey = (user) => {
-  return user.id || user.waId || `temp-user-${Math.random().toString(36).substr(2, 9)}`
+  return user.wa_id_or_sender || user.id || `${user.firstName}-${user.lastName}`.toLowerCase()
 }
+
+
 
 const getStatusOrder = (status) => {
   switch (status) {
@@ -2906,19 +2859,24 @@ const getStatusOrder = (status) => {
   }
 }
 
+// FIXED: Better message merging logic to prevent duplicates
 const mergeMessages = (newMessages, existingMessages) => {
   const uniqueMessagesMap = new Map()
+
   // Add existing messages first
   existingMessages.forEach((msg) => {
     uniqueMessagesMap.set(msg.id, msg)
   })
+
   // Add new messages, updating existing ones if needed
   newMessages.forEach((newMessage) => {
     const existing = uniqueMessagesMap.get(newMessage.id)
     if (existing) {
+      // Only update if the new message has better status or is not local
       if (
         (!newMessage.isLocalMessage && existing.isLocalMessage) ||
-        getStatusOrder(newMessage.status) > getStatusOrder(existing.status)
+        getStatusOrder(newMessage.status) > getStatusOrder(existing.status) ||
+        (newMessage.mediaUrl && !existing.mediaUrl) // Update with actual media URL
       ) {
         uniqueMessagesMap.set(newMessage.id, { ...existing, ...newMessage })
       }
@@ -2926,6 +2884,7 @@ const mergeMessages = (newMessages, existingMessages) => {
       uniqueMessagesMap.set(newMessage.id, newMessage)
     }
   })
+
   // Sort messages by timestamp
   return Array.from(uniqueMessagesMap.values()).sort((a, b) => {
     return (a.sentAt || 0) - (b.sentAt || 0)
@@ -2976,12 +2935,13 @@ function Chat() {
   const [originalTemplateBody, setOriginalTemplateBody] = useState("")
   const [templateBodyParameters, setTemplateBodyParameters] = useState([])
 
-  // NEW: Custom header image states
+  // Custom header image states
   const [customHeaderImageUrl, setCustomHeaderImageUrl] = useState("")
   const [showImageUrlInput, setShowImageUrlInput] = useState(false)
 
   const toggleAttachmentMenu3 = () => setIsOpen((prev) => !prev)
 
+  // FIXED: Better file handling with proper deduplication
   const handleFileSend = async (e, type) => {
     const file = e.target.files[0]
     if (!file) return
@@ -3000,7 +2960,7 @@ function Chat() {
       videoUrl: type === "video" ? URL.createObjectURL(file) : undefined,
       documentUrl: type === "document" ? URL.createObjectURL(file) : undefined,
       documentName: type === "document" ? file.name : undefined,
-      documentSize: file.size ? formatBytes(file.size) : "Unknown size", 
+      documentSize: file.size ? formatBytes(file.size) : "Unknown size",
       fileName: file.name,
       caption: file.name,
       status: MessageStatus.SENDING,
@@ -3011,10 +2971,12 @@ function Chat() {
       sentAt: numericTimestamp,
       sender: OUR_OWN_PHONE_NUMBER,
     }
+
     console.log("📄 New file message:", newFileMessage)
-    
+
     const wasNearBottom = checkIfNearBottom()
 
+    // Update user list with new message
     setUserList((prevUsers) => {
       const updatedUsers = prevUsers.map((user) =>
         user.id === selectedUser.id
@@ -3041,6 +3003,7 @@ function Chat() {
         alert("Please select a user to send message")
         e.target.value = null
         setUploadingFile(false)
+        // Mark message as failed
         setUserList((prevUsers) =>
           prevUsers.map((user) =>
             user.id === selectedUser.id
@@ -3063,6 +3026,7 @@ function Chat() {
       const accessToken = sessionStorage.getItem("accessToken") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
       const wabaId = sessionStorage.getItem("wabaId") || "361462453714220"
 
+      // Upload file
       const formData = new FormData()
       formData.append("file", file)
 
@@ -3088,6 +3052,7 @@ function Chat() {
         throw new Error("Upload failed: No media URL returned")
       }
 
+      // Prepare message object
       const mediaObject = {
         link: uploadedUrl,
       }
@@ -3107,6 +3072,7 @@ function Chat() {
         [type]: mediaObject,
       }
 
+      // Send message
       const sendMessageResponse = await fetch(`${BASE_URL}/api/${wabaId}/messages`, {
         method: "POST",
         headers: {
@@ -3133,6 +3099,7 @@ function Chat() {
 
       const apiReturnedMessageId = sendMessageResult.messages[0].id
 
+      // FIXED: Update message with proper deduplication
       setUserList((prevUsers) => {
         const updatedUsers = prevUsers.map((user) =>
           user.id === selectedUser.id
@@ -3144,12 +3111,11 @@ function Chat() {
                         ...msg,
                         id: apiReturnedMessageId || msg.id,
                         mediaUrl: uploadedUrl,
-                        imageUrl: type === "image" ? uploadedUrl : undefined,
-                        videoUrl: type === "video" ? uploadedUrl : undefined,
-                        documentUrl: type === "document" ? uploadedUrl : undefined,
+                        imageUrl: type === "image" ? uploadedUrl : msg.imageUrl,
+                        videoUrl: type === "video" ? uploadedUrl : msg.videoUrl,
+                        documentUrl: type === "document" ? uploadedUrl : msg.documentUrl,
                         status: MessageStatus.SENT,
                         isLocalMessage: false,
-                        documentSize: msg.documentSize, 
                       }
                     : msg,
                 ),
@@ -3162,16 +3128,15 @@ function Chat() {
         return updatedUsers
       })
 
- console.log("✅ Updated message ID:", apiReturnedMessageId)
- console.log("📦 Uploaded URL:", documentUrl)
- console.log("🧾 Updated user messages:", updated.messages)
- console.log("🧑‍💻 Full updated user:", updated)
- console.log("📋 Updated user list:", updatedUsers)
+      console.log("✅ Updated message ID:", apiReturnedMessageId)
+      console.log("📦 Uploaded URL:", uploadedUrl)
+
       simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       setIsOpen(false)
     } catch (error) {
       console.error("Error during upload/send:", error)
       alert("Network error during upload or send.")
+      // Mark message as failed
       setUserList((prevUsers) =>
         prevUsers.map((user) =>
           user.id === selectedUser.id
@@ -3290,6 +3255,7 @@ function Chat() {
     }
   }
 
+  // FIXED: Better API message transformation with proper document handling
   const transformApiMessage = async (apiMessage) => {
     const numericTimestamp = Number.parseInt(apiMessage.timestamp) * 1000
     const displayTimestamp = formatTimestamp(numericTimestamp)
@@ -3315,6 +3281,7 @@ function Chat() {
           type: MessageType.TEXT,
           text: apiMessage.message_body || "No message content",
         }
+
       case "image":
         return {
           ...commonProps,
@@ -3323,49 +3290,41 @@ function Chat() {
           mediaUrl: apiMessage.file_url || apiMessage.url,
           caption: apiMessage.message_body || "",
         }
-      // case "document":
-      //   return {
-      //     ...commonProps,
-      //     type: MessageType.DOCUMENT,
-      //     documentName: apiMessage.filename ,
-      //     documentSize: apiMessage.file_size ? formatBytes(apiMessage.file_size) : "Unknown size",
-      //     documentUrl: apiMessage.file_url || "#",
-      //     mediaUrl: apiMessage.file_url,
-      //     caption: apiMessage.message_body || "",
-      //   }
+
       case "document": {
-        console.log("📥 Incoming API document message:", apiMessage);
-      
-        // Parse the S3 URL even if file_url is missing
-        const fileUrl   = apiMessage.file_url
-                       || apiMessage.url           
-                       || apiMessage.media_url
-                       || null;
-      
-        // Prefer filename; fall back to caption or path part of URL
-        const filename = decodeURIComponent(
-          apiMessage.filename
-          || apiMessage.name
-          || apiMessage.caption
-          || (fileUrl ? fileUrl.split("/").pop() : "Document")
-        );
-        
-        const cleanFilename = filename.replace(/^\d{10,16}-/, "");          
-        const fileSize  = apiMessage.file_size || apiMessage.size || null;
-      
-console.log("cleanFilename:", cleanFilename);
-console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
+        console.log("📥 Incoming API document message:", apiMessage)
 
+        // Get file URL
+        const fileUrl = apiMessage.file_url || apiMessage.url || apiMessage.media_url || null
 
-        // If the platform blocked the send, surface the reason
-        let sendError   = null;
+        // Clean filename - remove timestamp prefix if present
+        const rawFilename =
+          apiMessage.filename ||
+          apiMessage.name ||
+          apiMessage.caption ||
+          (fileUrl ? fileUrl.split("/").pop() : "Document")
+        const cleanFilename = decodeURIComponent(rawFilename).replace(/^\d{10,16}-/, "")
+
+        const fileSize = apiMessage.file_size || apiMessage.size || null
+
+        console.log("📄 Document details:", {
+          fileUrl,
+          rawFilename,
+          cleanFilename,
+          fileSize,
+        })
+
+        // Handle send errors
+        let sendError = null
         if (apiMessage.extra_info2) {
           try {
-            const parsed = JSON.parse(apiMessage.extra_info2);
-            if (Array.isArray(parsed) && parsed[0]?.code) sendError = parsed[0];
-          } catch (_) {/* ignore JSON parse errors */}
+            const parsed = JSON.parse(apiMessage.extra_info2)
+            if (Array.isArray(parsed) && parsed[0]?.code) sendError = parsed[0]
+          } catch (_) {
+            // ignore JSON parse errors
+          }
         }
-      
+
         return {
           ...commonProps,
           type: MessageType.DOCUMENT,
@@ -3375,18 +3334,12 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
           mediaUrl: fileUrl,
           caption: cleanFilename,
           fileName: cleanFilename,
-          status: apiMessage.status || "failed",
-          // isRead: apiMessage.status === "read", 
-          isRead:
-  apiMessage.status === "read" ||
-  apiMessage.isRead === true ||
-  false,
+          status: sendError ? MessageStatus.FAILED : apiMessage.status || MessageStatus.DELIVERED,
+          isRead: apiMessage.status === "read" || apiMessage.isRead === true || false,
           sendError,
-        };
-        
+        }
       }
-      
-      
+
       case "template": {
         const parsed = (() => {
           try {
@@ -3399,8 +3352,8 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
 
         const templateId = apiMessage.phone_number_id || "361462453714220"
         const templateName = parsed.name || "unknown_template"
-
         let templateData = {}
+
         try {
           const res = await fetch(`${BASE_URL}/api/phone/get/message_template/${templateId}/${templateName}`)
           const json = await res.json()
@@ -3428,9 +3381,9 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
         })
 
         const footerText = components.find((c) => c.type?.toLowerCase() === "footer")?.text || ""
-
         const headerComponent = components.find((c) => c.type?.toLowerCase() === "header")
         let headerImage = null
+
         if (headerComponent && headerComponent.format === "IMAGE" && headerComponent.example?.header_handle?.[0]) {
           headerImage = headerComponent.example.header_handle[0]
         }
@@ -3458,6 +3411,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
           buttons,
         }
       }
+
       case "video":
         return {
           ...commonProps,
@@ -3466,6 +3420,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
           mediaUrl: apiMessage.file_url,
           caption: apiMessage.message_body || "",
         }
+
       default:
         return {
           ...commonProps,
@@ -3499,7 +3454,6 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
         : []
 
       const hasMore = transformedMessages.length > 0
-
       return { messages: transformedMessages, hasMore }
     } catch (error) {
       console.error(`Error fetching messages for page ${page}:`, error?.response?.data || error.message)
@@ -3516,7 +3470,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
     }
   }
 
-  // FIXED loadMoreMessages function
+  // FIXED: Load more messages function
   const loadMoreMessages = async () => {
     if (!selectedUser || !hasMoreMessages || loadingMoreMessages) return
 
@@ -3562,10 +3516,8 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
       }
 
       setSelectedUser(updatedUser)
-
       const updatedUsers = userList.map((u) => (u.id === selectedUser.id ? updatedUser : u))
       setUserList(updatedUsers)
-
       setCurrentPage(nextPage)
 
       // Preserve scroll position after DOM update
@@ -3869,33 +3821,93 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
     }
   }
 
+  // FIXED: Better user selection with proper message merging
+  // const handleUserSelect = async (user) => {
+  //   setSelectedUser(user)
+  //   if (isMobile) setShowSidebar(false)
+  //   setCurrentPage(1)
+  //   setHasMoreMessages(true)
+  //   setShouldScrollToBottom(true)
+  //   setIsNearBottom(true)
+
+  //   if (user.wa_id_or_sender) {
+  //     const storedUsers = loadMessagesFromStorage()
+  //     const storedUser = storedUsers.find((u) => u.wa_id_or_sender === user.wa_id_or_sender)
+  //     const localMessagesForUser = storedUser ? storedUser.messages : []
+
+  //     const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
+
+  //     // FIXED: Better message merging to prevent duplicates
+  //     const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
+
+  //     const updatedUser = { ...user, messages: mergedMessages }
+  //     setSelectedUser(updatedUser)
+  //     setHasMoreMessages(hasMore)
+
+  //     const updatedUsers = userList.map((u) => (u.id === user.id ? updatedUser : u))
+  //     setUserList(updatedUsers)
+  //     saveMessagesToStorage(updatedUsers)
+  //   }
+  // }
+
   const handleUserSelect = async (user) => {
     setSelectedUser(user)
     if (isMobile) setShowSidebar(false)
+  
     setCurrentPage(1)
     setHasMoreMessages(true)
     setShouldScrollToBottom(true)
     setIsNearBottom(true)
-
+  
     if (user.wa_id_or_sender) {
       const storedUsers = loadMessagesFromStorage()
-      const storedUser = storedUsers.find((u) => u.wa_id_or_sender === user.wa_id_or_sender)
+      const storedUser = storedUsers.find(
+        (u) => u.wa_id_or_sender === user.wa_id_or_sender
+      )
       const localMessagesForUser = storedUser ? storedUser.messages : []
-
-      const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
-
+  
+      const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(
+        user.wa_id_or_sender,
+        1,
+        false
+      )
+  
       const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
-
-      const updatedUser = { ...user, messages: mergedMessages }
+  
+      // ✅ Use the user from `userList` to preserve all correct properties
+      const originalUser = userList.find(
+        (u) =>
+          (user.id && u.id && user.id === u.id) ||
+          (user.wa_id_or_sender && user.wa_id_or_sender === u.wa_id_or_sender)
+      )
+  
+      if (!originalUser) return
+  
+      const updatedUser = {
+        ...originalUser, // ✅ Preserve all original state (like activeLast24Hours)
+        messages: mergedMessages, // 👈 Only update messages
+      }
+  
       setSelectedUser(updatedUser)
       setHasMoreMessages(hasMore)
-
-      const updatedUsers = userList.map((u) => (u.id === user.id ? updatedUser : u))
+  
+      const updatedUsers = userList.map((u) =>
+        u === originalUser ? updatedUser : u
+      )
+  
       setUserList(updatedUsers)
       saveMessagesToStorage(updatedUsers)
     }
   }
+  
+  useEffect(() => {
+    const activeUsers = userList.filter(u => u.activeLast24Hours === true)
+    console.log("Total users:", userList.length)
+    console.log("Active users count:", activeUsers.length)
+    console.log("Active users keys:", activeUsers.map(u => generateUserKey(u)))
+  }, [userList])
 
+  
   const handleBackToList = () => {
     if (isMobile) setShowSidebar(true)
   }
@@ -4093,8 +4105,8 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
           }
         } else {
           const componentsForApi = []
-
           const headerComponent = componentsArray.find((comp) => comp.type === "HEADER")
+
           if (headerComponent) {
             if (headerComponent.format === "IMAGE") {
               // Use custom image URL if provided, otherwise use template default
@@ -4261,7 +4273,6 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
       const template = templates.find((t) => t.name === selectedValue)
       if (template) {
         setSelectedTemplateObject(template)
-
         let componentsArray = []
         try {
           componentsArray = JSON.parse(template.components)
@@ -4289,6 +4300,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
             .map((_, i) => {
               return templateExampleParams[i] !== undefined ? templateExampleParams[i] : ""
             })
+
           setTemplateBodyParameters(initialParams)
 
           let previewText = bodyText
@@ -4428,10 +4440,11 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                 />
               </div>
             </div>
+
             {/* Custom Image URL Input - Show only for templates with image headers */}
             {showImageUrlInput && selectedTemplateObject && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2"> Image URL</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
                 <input
                   type="url"
                   value={customHeaderImageUrl}
@@ -4453,13 +4466,12 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                 )}
               </div>
             )}
+
             {/* Content area that shows when dropdown is selected */}
             {showDropdown && (
               <div className="mb-4">
-                {/* <label className="block text-sm font-medium text-gray-700 mb-2">Message Content</label> */}
                 {selectedOption === "custom" ? (
                   <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
-                    {/* <h4 className="font-medium text-sm text-gray-800 mb-2">Custom Message:</h4> */}
                     <textarea
                       value={dropdownContent}
                       onChange={(e) => setDropdownContent(e.target.value)}
@@ -4471,7 +4483,6 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                 ) : (
                   selectedTemplateObject && (
                     <div className="border border-gray-200 rounded-md p-4 bg-gray-50">
-                      {/* <h4 className="font-medium text-sm text-gray-800 mb-2">Template Preview:</h4> */}
                       {(() => {
                         let componentsArray = []
                         try {
@@ -4480,6 +4491,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                           console.error("Error parsing template components for preview:", e)
                           return <p className="text-red-500 text-xs">Error loading template preview.</p>
                         }
+
                         return (
                           <>
                             {componentsArray.map((comp, compIndex) => {
@@ -4507,7 +4519,6 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                               } else if (comp.type === "BODY") {
                                 return (
                                   <div key={compIndex} className="mb-2">
-                                    {/* <p className="text-sm text-gray-600 mb-1">Body Preview:</p> */}
                                     <textarea
                                       value={dropdownContent}
                                       onChange={(e) => setDropdownContent(e.target.value)}
@@ -4516,7 +4527,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                                     />
                                     {templateBodyParameters.length > 0 && (
                                       <div className="mt-2 space-y-2">
-                                        <p className="text-sm font-medium text-gray-700">Field :</p>
+                                        <p className="text-sm font-medium text-gray-700">Fields:</p>
                                         {templateBodyParameters.map((param, paramIndex) => (
                                           <input
                                             key={paramIndex}
@@ -4562,6 +4573,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                 )}
               </div>
             )}
+
             {/* Buttons */}
             <div className="flex justify-end gap-3">
               <button
@@ -4608,10 +4620,23 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
             <Menu size={18} className="sm:w-5 sm:h-5" />
             <h1 className="text-base sm:text-lg font-semibold">Chat List</h1>
             <h1 className="text-base sm:text-lg font-semibold ml-20">Total: {userList.length}</h1>
+            {/* <h1 className="text-base sm:text-lg font-semibold ml-20">
+            Active: {userList.filter((user) => user.activeLast24Hours === true).length}
+            </h1> */}
             <h1 className="text-base sm:text-lg font-semibold ml-20">
-              Active: {userList.filter((user) => user.activeLast24Hours).length}
-            </h1>
+  Active: {
+    Array.from(
+      new Set(
+        userList
+          .filter(user => user.activeLast24Hours)
+          .map(user => user.wa_id_or_sender)
+      )
+    ).length
+  }
+</h1>
+
           </div>
+          
           <div>
             <label htmlFor="search-input" className="block text-sm font-medium text-gray-700 mb-1 mt-4 sm:mt-6">
               Search
@@ -4629,12 +4654,14 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
         </div>
 
         <div className="overflow-y-auto px-3 sm:px-4 pb-4 space-y-2 sm:space-y-3 flex-1">
+          
           {userList
             .filter((user) => {
               const fullName = `${user.firstName} ${user.lastName}`.toLowerCase()
               return fullName.includes(searchTerm.toLowerCase())
             })
             .map((user) => (
+              
               <div
                 key={generateUserKey(user)}
                 onClick={() => handleUserSelect(user)}
@@ -4653,6 +4680,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                     {user.activeLast24Hours && (
                       <span className="absolute bottom-0 right-0 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-500 border-2 border-white rounded-full" />
                     )}
+                    
                   </div>
                   <div className="flex flex-col min-w-0">
                     <div className="flex items-center gap-1 sm:gap-2 flex-wrap min-w-0">
@@ -4670,6 +4698,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                 </span>
               </div>
             ))}
+            
         </div>
       </div>
 
@@ -4737,9 +4766,8 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                   const position = isMessageFromContact ? "left" : "right"
 
                   return (
-                    
                     <div key={generateMessageKey(msg)} className="relative group">
-                      {/* {showDateSeparator && <DateSeparator date={msg.sentAt} />} */}
+                      {showDateSeparator && <DateSeparator date={msg.sentAt} />}
                       <MessageRenderer message={msg} position={position} />
                     </div>
                   )
@@ -4761,7 +4789,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                       onClick={toggleAttachmentMenu3}
                       disabled={uploadingFile}
                     >
-                      <PaperclipIcon size={18} />
+                      <Paperclip size={18} />
                     </button>
                     {isOpen && (
                       <div className="absolute bottom-12 left-0 bg-white rounded-lg shadow-lg border p-2 w-40 sm:w-48 z-50 space-y-2">
@@ -4785,7 +4813,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                           onClick={() => videoInputRef.current?.click()}
                           disabled={uploadingFile}
                         >
-                          <VideoIcon size={18} className="text-red-700" />
+                          <Video size={18} className="text-red-700" />
                           <span className="text-sm">Video</span>
                         </button>
                         <input
@@ -4800,7 +4828,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
                           onClick={() => documentInputRef.current?.click()}
                           disabled={uploadingFile}
                         >
-                          <FileIcon size={18} className="text-blue-700" />
+                          <File size={18} className="text-blue-700" />
                           <span className="text-sm">Document</span>
                         </button>
                         <input
@@ -4897,7 +4925,7 @@ console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
             <hr className="border-gray-300" />
             <h1 className="font-semibold text-base sm:text-lg">Details</h1>
             <div className="flex items-center gap-2 mt-2">
-              <MessageSquareTextIcon size={14} className="text-orange-500 sm:w-4 sm:h-4" />
+              <MessageSquareText size={14} className="text-orange-500 sm:w-4 sm:h-4" />
               <span className="font-extralight text-xs sm:text-sm">
                 Source <span className="text-indigo-500">{selectedUser.source}</span>
               </span>
