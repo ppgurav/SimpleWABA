@@ -1358,7 +1358,9 @@
 //             ? {
 //                 ...user,
 //                 messages: user.messages.map((msg) =>
-//                   msg.id === messageId ? { ...msg, status: MessageStatus.FAILED } : msg,
+//                   msg.id === messageId ? { ...msg, 
+// 
+//  } : msg,
 //                 ),
 //               }
 //             : user,
@@ -2400,7 +2402,6 @@
 
 
 
-
 import {
   Mic,
   Menu,
@@ -2519,7 +2520,7 @@ const USER_STORAGE_KEY = "whatsapp_chat_users"
 
 const saveMessagesToStorage = (userList) => {
   try {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userList))
+    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userList))
   } catch (error) {
     console.error("Failed to save messages to localStorage:", error)
   }
@@ -2527,7 +2528,7 @@ const saveMessagesToStorage = (userList) => {
 
 const loadMessagesFromStorage = () => {
   try {
-    const stored = localStorage.getItem(USER_STORAGE_KEY)
+    const stored = sessionStorage.getItem(USER_STORAGE_KEY)
     return stored ? JSON.parse(stored) : []
   } catch (error) {
     console.error("Failed to load messages from localStorage:", error)
@@ -2684,40 +2685,95 @@ const ImageMessage = ({ message, position }) => (
   </div>
 )
 
-const DocumentMessage = ({ message, position }) => (
-  <div
-    className={`${
-      position === "left" ? incomingMessageClasses : outgoingMessageClasses
-    } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm relative`}
-  >
-    <div className="bg-white border border-gray-200 rounded-md p-2 mb-2 flex items-center">
-      <div className="p-2 rounded-md mr-2">
-        <FileMinus size={18} className="text-blue-600" />
+// const DocumentMessage = ({ message, position }) => (
+//   <div
+//     className={`${
+//       position === "left" ? incomingMessageClasses : outgoingMessageClasses
+//     } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm relative`}
+//   >
+//     <div className="bg-white border border-gray-200 rounded-md p-2 mb-2 flex items-center">
+//       <div className="p-2 rounded-md mr-2">
+//         <FileMinus size={18} className="text-blue-600" />
+//       </div>
+//       <div className="flex-1 min-w-0">
+//         <p className="text-sm font-medium truncate">{message.documentName || message.fileName || "Document"}</p>
+//         <p className="text-xs text-gray-500">{message.documentSize || "Unknown size"}</p>
+//       </div>
+      
+//       <a
+//         href={message.documentUrl || message.mediaUrl}
+//         className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
+//         target="_blank"
+//         rel="noopener noreferrer"
+//       >
+//         <Download size={16} />
+//       </a>
+//     </div>
+//     {message.caption && (
+//       <div
+//         dangerouslySetInnerHTML={{
+//           __html: formatText(message.caption, "document"),
+//         }}
+//         className={`text-sm ${position === "left" ? "text-gray-600" : "text-black"} whitespace-pre-wrap break-words`}
+//       />
+//     )}
+//     <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
+//   </div>
+// )
+
+const DocumentMessage = ({ message, position }) => {
+  // Debug the incoming message
+  console.log("DocumentMessage received:", message);
+
+  return (
+    <div
+      className={`${
+        position === "left" ? incomingMessageClasses : outgoingMessageClasses
+      } p-2 sm:p-3 rounded-xl max-w-[280px] sm:max-w-xs md:max-w-sm relative`}
+    >
+      <div className="bg-white border border-gray-200 rounded-md p-2 mb-2 flex items-center">
+        <div className="p-2 rounded-md mr-2">
+          <FileMinus size={18} className="text-blue-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">
+            {message.documentName || message.fileName || "Document"}
+          </p>
+          <p className="text-xs text-gray-500">
+            {message.documentSize || "Unknown size"}
+          </p>
+        </div>
+
+        <a
+          href={message.documentUrl || message.mediaUrl}
+          className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Download size={16} />
+        </a>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{message.documentName || message.fileName || "Document"}</p>
-        <p className="text-xs text-gray-500">{message.documentSize || "Unknown size"}</p>
-      </div>
-      <a
-        href={message.documentUrl || message.mediaUrl}
-        className="text-green-500 border border-green-500 rounded-full hover:text-blue-700 p-1"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Download size={16} />
-      </a>
-    </div>
-    {message.caption && (
-      <div
-        dangerouslySetInnerHTML={{
-          __html: formatText(message.caption, "document"),
-        }}
-        className={`text-sm ${position === "left" ? "text-gray-600" : "text-black"} whitespace-pre-wrap break-words`}
+
+      {message.caption && (
+        <div
+          dangerouslySetInnerHTML={{
+            __html: formatText(message.caption, "document"),
+          }}
+          className={`text-sm ${
+            position === "left" ? "text-gray-600" : "text-black"
+          } whitespace-pre-wrap break-words`}
+        />
+      )}
+
+      <MessageTicks
+        status={message.status}
+        timestamp={message.timestamp}
+        position={position}
       />
-    )}
-    <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
-  </div>
-)
+    </div>
+  );
+};
+
 
 const formatBytes = (bytes, decimals = 2) => {
   if (bytes === 0) return "0 Bytes"
@@ -2944,7 +3000,7 @@ function Chat() {
       videoUrl: type === "video" ? URL.createObjectURL(file) : undefined,
       documentUrl: type === "document" ? URL.createObjectURL(file) : undefined,
       documentName: type === "document" ? file.name : undefined,
-      documentSize: selectedUser.file_size ? formatBytes(selectedUser.file_size) : "Unknown size",
+      documentSize: file.size ? formatBytes(file.size) : "Unknown size", 
       fileName: file.name,
       caption: file.name,
       status: MessageStatus.SENDING,
@@ -2955,7 +3011,8 @@ function Chat() {
       sentAt: numericTimestamp,
       sender: OUR_OWN_PHONE_NUMBER,
     }
-
+    console.log("📄 New file message:", newFileMessage)
+    
     const wasNearBottom = checkIfNearBottom()
 
     setUserList((prevUsers) => {
@@ -3092,6 +3149,7 @@ function Chat() {
                         documentUrl: type === "document" ? uploadedUrl : undefined,
                         status: MessageStatus.SENT,
                         isLocalMessage: false,
+                        documentSize: msg.documentSize, 
                       }
                     : msg,
                 ),
@@ -3104,6 +3162,11 @@ function Chat() {
         return updatedUsers
       })
 
+ console.log("✅ Updated message ID:", apiReturnedMessageId)
+ console.log("📦 Uploaded URL:", documentUrl)
+ console.log("🧾 Updated user messages:", updated.messages)
+ console.log("🧑‍💻 Full updated user:", updated)
+ console.log("📋 Updated user list:", updatedUsers)
       simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       setIsOpen(false)
     } catch (error) {
@@ -3260,16 +3323,70 @@ function Chat() {
           mediaUrl: apiMessage.file_url || apiMessage.url,
           caption: apiMessage.message_body || "",
         }
-      case "document":
+      // case "document":
+      //   return {
+      //     ...commonProps,
+      //     type: MessageType.DOCUMENT,
+      //     documentName: apiMessage.filename ,
+      //     documentSize: apiMessage.file_size ? formatBytes(apiMessage.file_size) : "Unknown size",
+      //     documentUrl: apiMessage.file_url || "#",
+      //     mediaUrl: apiMessage.file_url,
+      //     caption: apiMessage.message_body || "",
+      //   }
+      case "document": {
+        console.log("📥 Incoming API document message:", apiMessage);
+      
+        // Parse the S3 URL even if file_url is missing
+        const fileUrl   = apiMessage.file_url
+                       || apiMessage.url           
+                       || apiMessage.media_url
+                       || null;
+      
+        // Prefer filename; fall back to caption or path part of URL
+        const filename = decodeURIComponent(
+          apiMessage.filename
+          || apiMessage.name
+          || apiMessage.caption
+          || (fileUrl ? fileUrl.split("/").pop() : "Document")
+        );
+        
+        const cleanFilename = filename.replace(/^\d{10,16}-/, "");          
+        const fileSize  = apiMessage.file_size || apiMessage.size || null;
+      
+console.log("cleanFilename:", cleanFilename);
+console.log("cleanFilename (used in UI):", cleanFilename); // Optional debug
+
+
+        // If the platform blocked the send, surface the reason
+        let sendError   = null;
+        if (apiMessage.extra_info2) {
+          try {
+            const parsed = JSON.parse(apiMessage.extra_info2);
+            if (Array.isArray(parsed) && parsed[0]?.code) sendError = parsed[0];
+          } catch (_) {/* ignore JSON parse errors */}
+        }
+      
         return {
           ...commonProps,
           type: MessageType.DOCUMENT,
-          documentName: apiMessage.filename || "Document",
-          documentSize: apiMessage.file_size ? formatBytes(apiMessage.file_size) : "Unknown size",
-          documentUrl: apiMessage.file_url || "#",
-          mediaUrl: apiMessage.file_url,
-          caption: apiMessage.message_body || "",
-        }
+          documentName: cleanFilename,
+          documentSize: fileSize ? formatBytes(fileSize) : "Unknown size",
+          documentUrl: fileUrl || "#",
+          mediaUrl: fileUrl,
+          caption: cleanFilename,
+          fileName: cleanFilename,
+          status: apiMessage.status || "failed",
+          // isRead: apiMessage.status === "read", 
+          isRead:
+  apiMessage.status === "read" ||
+  apiMessage.isRead === true ||
+  false,
+          sendError,
+        };
+        
+      }
+      
+      
       case "template": {
         const parsed = (() => {
           try {
@@ -4314,7 +4431,7 @@ function Chat() {
             {/* Custom Image URL Input - Show only for templates with image headers */}
             {showImageUrlInput && selectedTemplateObject && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Header Image URL (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2"> Image URL</label>
                 <input
                   type="url"
                   value={customHeaderImageUrl}
