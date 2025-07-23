@@ -5045,7 +5045,7 @@
 
 
 
-"use client"
+
 
 import {
   Mic,
@@ -5670,7 +5670,7 @@ function Chat() {
         link: uploadedUrl,
       }
       if (type === "image" || type === "video") {
-        // mediaObject.caption = file.name
+        mediaObject.caption = file.name
       }
       if (type === "document") {
         mediaObject.filename = file.name
@@ -5887,8 +5887,8 @@ function Chat() {
         return {
           ...commonProps,
           type: MessageType.IMAGE,
-          imageUrl: apiMessage.file_url || apiMessage.url || "/placeholder.svg?height=240&width=240",
-          mediaUrl: apiMessage.file_url || apiMessage.url,
+          imageUrl:  apiMessage.url || "/placeholder.svg?height=240&width=240",
+          mediaUrl:  apiMessage.url,
           // caption: apiMessage.message_body || "",
           caption: "",
         }
