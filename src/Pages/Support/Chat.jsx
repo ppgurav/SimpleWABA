@@ -5320,7 +5320,7 @@ const ImageMessage = ({ message, position }) => (
     <img
       src={message.imageUrl || message.mediaUrl || "/placeholder.svg?height=240&width=240"}
       // alt={message.caption || "Shared image"}
-      alt={message.caption ? message.caption : ""}
+      // alt={message.caption ? message.caption : ""}
       className="rounded-md mb-2 w-full max-w-[240px] h-48 sm:h-60 object-cover"
       onError={(e) => {
         e.target.src = "/placeholder.svg?height=240&width=240"
@@ -5887,10 +5887,10 @@ function Chat() {
         return {
           ...commonProps,
           type: MessageType.IMAGE,
-          imageUrl:  apiMessage.url || "/placeholder.svg?height=240&width=240",
-          mediaUrl:  apiMessage.url,
+          imageUrl: apiMessage.file_url || apiMessage.url || "/placeholder.svg?height=240&width=240",
+          mediaUrl: apiMessage.file_url || apiMessage.url,
           // caption: apiMessage.message_body || "",
-          caption: "",
+          // caption: "",
         }
       case "document": {
         console.log("📥 Incoming API document message:", apiMessage)
