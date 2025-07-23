@@ -5312,6 +5312,7 @@ const TextMessage = ({ message, position }) => (
 )
 
 const ImageMessage = ({ message, position }) => (
+  <>
   <div
     className={`${
       position === "left" ? incomingMessageClasses : outgoingMessageClasses
@@ -5320,7 +5321,7 @@ const ImageMessage = ({ message, position }) => (
     <img
       src={message.imageUrl || message.mediaUrl || "/placeholder.svg?height=240&width=240"}
       // alt={message.caption || "Shared image"}
-      // alt={message.caption ? message.caption : ""}
+      alt={message.caption ? message.caption : ""}
       className="rounded-md mb-2 w-full max-w-[240px] h-48 sm:h-60 object-cover"
       onError={(e) => {
         e.target.src = "/placeholder.svg?height=240&width=240"
@@ -5328,10 +5329,11 @@ const ImageMessage = ({ message, position }) => (
     />
     <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
   </div>
+  </>
 )
 
 const DocumentMessage = ({ message, position }) => {
-  console.log("📄 DocumentMessage received:", message)
+  // console.log("📄 DocumentMessage received:", message)
   return (
     <div
       className={`${
@@ -5588,7 +5590,7 @@ function Chat() {
       // documentSize: file.size ? formatBytes(file.size) : "Unknown size",
       documentSize: file.size, // store raw bytes
       fileName: file.name,
-      caption: file.name,
+      // caption: file.name,
       status: MessageStatus.SENDING,
       timestamp: displayTimestamp,
       role: "me",
@@ -5597,7 +5599,7 @@ function Chat() {
       sentAt: numericTimestamp,
       sender: OUR_OWN_PHONE_NUMBER,
     }
-    console.log("📄 New file message:", newFileMessage)
+    // console.log("📄 New file message:", newFileMessage)
     const wasNearBottom = checkIfNearBottom()
     // Update user list with new message
     setUserList((prevUsers) => {
@@ -5670,7 +5672,7 @@ function Chat() {
         link: uploadedUrl,
       }
       if (type === "image" || type === "video") {
-        mediaObject.caption = file.name
+        // mediaObject.caption = file.name
       }
       if (type === "document") {
         mediaObject.filename = file.name
@@ -5681,6 +5683,7 @@ function Chat() {
         type,
         [type]: mediaObject,
       }
+      console.log("message ",messageBody);
       // Send message
       const sendMessageResponse = await fetch(`${BASE_URL}/api/${wabaId}/messages`, {
         method: "POST",
@@ -5732,8 +5735,8 @@ function Chat() {
         saveMessagesToStorage(updatedUsers)
         return updatedUsers
       })
-      console.log("✅ Updated message ID:", apiReturnedMessageId)
-      console.log("📦 Uploaded URL:", uploadedUrl)
+      // console.log("✅ Updated message ID:", apiReturnedMessageId)
+      // console.log("📦 Uploaded URL:", uploadedUrl)
       simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       setIsOpen(false)
     } catch (error) {
@@ -5875,7 +5878,7 @@ function Chat() {
       isLocalMessage: false,
       sender: senderIdentifier,
     }
-
+    // console.log("Image",);
     switch (apiMessage.message_type) {
       case "text":
         return {
@@ -5891,9 +5894,10 @@ function Chat() {
           mediaUrl: apiMessage.file_url || apiMessage.url,
           // caption: apiMessage.message_body || "",
           // caption: "",
+          
         }
       case "document": {
-        console.log("📥 Incoming API document message:", apiMessage)
+        // console.log("📥 Incoming API document message:", apiMessage)
         // Get file URL
         const fileUrl = apiMessage.file_url || apiMessage.url || apiMessage.media_url || null
         // Clean filename - remove timestamp prefix if present
@@ -5904,12 +5908,12 @@ function Chat() {
           (fileUrl ? fileUrl.split("/").pop() : "Document")
         const cleanFilename = decodeURIComponent(rawFilename).replace(/^\d{10,16}-/, "")
         const fileSize = apiMessage.file_size || apiMessage.size || null
-        console.log("📄 Document details:", {
-          fileUrl,
-          rawFilename,
-          cleanFilename,
-          fileSize,
-        })
+        // console.log("📄 Document details:", {
+        //   fileUrl,
+        //   rawFilename,
+        //   cleanFilename,
+        //   fileSize,
+        // })
         // Handle send errors
         let sendError = null
         if (apiMessage.extra_info2) {
@@ -6044,7 +6048,7 @@ function Chat() {
         throw new Error("Missing authentication data")
       }
       const response = await axios.get(`${BASE_URL}/api/phone/get/${wabaId}/${userId}/${page}`)
-      console.log(`Messages API Response for page ${page}:`, response.data)
+      // console.log(`Messages API Response for page ${page}:`, response.data)
       const transformedMessages = Array.isArray(response.data)
         ? await Promise.all(response.data.map((msg) => transformApiMessage(msg)))
         : []
@@ -6153,7 +6157,7 @@ function Chat() {
         throw new Error("Missing authentication data")
       }
       const response = await axios.get(`${BASE_URL}/api/phone/get/chats/${wabaId}?accessToken=${accessToken}`)
-      console.log("API Response:", response.data)
+      // console.log("API Response:", response.data)
       const transformedData = Array.isArray(response.data)
         ? response.data.map((chat, index) => {
             const { firstName, lastName } = parseContactName(chat.contact_name)
@@ -6178,7 +6182,7 @@ function Chat() {
             }
           })
         : []
-      console.log("Transformed Data:", transformedData)
+      // console.log("Transformed Data:", transformedData)
       const storedUsers = loadMessagesFromStorage()
       const mergedUsers = transformedData.map((apiUser) => {
         const storedUser = storedUsers.find((stored) => stored.wa_id_or_sender === apiUser.wa_id_or_sender)
@@ -6420,12 +6424,12 @@ function Chat() {
 
   useEffect(() => {
     const activeUsers = userList.filter((u) => u.activeLast24Hours === true)
-    console.log("Total users:", userList.length)
-    console.log("Active users count:", activeUsers.length)
-    console.log(
-      "Active users keys:",
-      activeUsers.map((u) => generateUserKey(u)),
-    )
+    // console.log("Total users:", userList.length)
+    // console.log("Active users count:", activeUsers.length)
+    // console.log(
+    //   "Active users keys:",
+    //   activeUsers.map((u) => generateUserKey(u)),
+    // )
   }, [userList])
 
   const handleBackToList = () => {
