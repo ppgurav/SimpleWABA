@@ -5381,7 +5381,7 @@ const TemplateMessage = ({ message, position }) => {
     }
   }
 
-  // Fix: Use headerImage property consistently
+  // Fix: Use headerImage property consistentl
   const headerImageUrl = message.headerImage || message.headerImageUrl || null
 
   return (
