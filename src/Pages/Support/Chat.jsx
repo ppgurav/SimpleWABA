@@ -5359,14 +5359,14 @@ const DocumentMessage = ({ message, position }) => {
           </a>
         )}
       </div>
-      {message.caption && message.caption !== (message.documentName || message.fileName) && (
+      {/* {message.caption && message.caption !== (message.documentName || message.fileName) && (
         <div
           dangerouslySetInnerHTML={{
             __html: formatText(message.caption, "document"),
           }}
           className={`text-sm ${position === "left" ? "text-gray-600" : "text-black"} whitespace-pre-wrap break-words`}
         />
-      )}
+      )} */}
       <MessageTicks status={message.status} timestamp={message.timestamp} position={position} />
     </div>
   )
