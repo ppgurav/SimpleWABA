@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Mic,
   Menu,
@@ -412,7 +414,7 @@ const VideoMessage = ({ message, position }) => {
           }
         }}
       >
-        Your browser does not support the video tag.....
+        Your browser does not support the video tag.
       </video>
       {message.caption && (
         <div
@@ -497,7 +499,6 @@ const mergeMessages = (newMessages, existingMessages) => {
     return (a.sentAt || 0) - (b.sentAt || 0)
   })
 }
-
 
 function Chat() {
   const [selectedUser, setSelectedUser] = useState(null)
@@ -1107,6 +1108,7 @@ function Chat() {
       const updatedUser = {
         ...selectedUser,
         messages: mergedMessages,
+        activeLast24Hours: user.activeLast24Hours 
       }
 
       setSelectedUser(updatedUser)
