@@ -91,6 +91,7 @@
 // export default App;
 
 
+
 import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
@@ -103,7 +104,6 @@ import TemplateBot from "./Pages/Marketing/TemplateBot";
 import Signup from "./Pages/Auth/Signup";
 import Login from "./Pages/Auth/Login";
 import Chat from "./Pages/Support/Chat";
-import Sidebar from "./Components/Sidebar";
 import Setup from "./Pages/Support/Setup";
 import Status from "./Pages/Setup/Status";
 import Source from "./Pages/Setup/Source";
@@ -124,7 +124,7 @@ import ForgetPassword from "./Pages/Auth/ForgetPassword";
 import OTPValidation from "./Pages/Auth/OTPValidation";
 import ResetPassword from "./Pages/Auth/ResetPassword";
 import ProfilePage from "./Components/Profile";
-import PrivateRoute from "./Components/PrivateRoute"; // NEW IMPORT
+import PrivateRoute from "./Components/PrivateRoute"; // 🔒 Import this
 
 function App() {
   return (
@@ -133,13 +133,11 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-
-        {/* Public routes */}
         <Route path="/forgot-password" element={<ForgetPassword />} />
         <Route path="/otp-validate" element={<OTPValidation />} />
         <Route path="/reset" element={<ResetPassword />} />
 
-        {/* Protected routes */}
+        {/* 🔒 Protected routes */}
         <Route
           path="/*"
           element={
