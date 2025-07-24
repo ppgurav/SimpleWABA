@@ -2391,28 +2391,7 @@
 
 // export default Chat
 
-"use client"
-
-import {
-  Mic,
-  Menu,
-  X,
-  Info,
-  Plus,
-  Phone,
-  Calendar,
-  MessageSquareText,
-  Clock,
-  Download,
-  FileMinus,
-  Check,
-  CheckCheck,
-  Paperclip,
-  ImageIcon,
-  Video,
-  File,
-  ChevronDown,
-} from "lucide-react"
+import { Mic, Menu, X, Info, Plus, Phone, Calendar, MessageSquareText, Clock, Download, FileMinus, Check, CheckCheck, Paperclip, ImageIcon, Video, File, ChevronDown } from 'lucide-react'
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
 
@@ -2770,19 +2749,14 @@ const TemplateMessage = ({ message, position }) => {
   )
 }
 
-// FIXED: VideoMessage component with proper video URL handling
 const VideoMessage = ({ message, position }) => {
-  // Get the correct video URL - prioritize server URL over local blob URL
   const getVideoUrl = () => {
-    // If we have a server URL (mediaUrl), use it
     if (message.mediaUrl && !message.mediaUrl.startsWith("blob:")) {
       return message.mediaUrl
     }
-    // If we have videoUrl and it's not a blob, use it
     if (message.videoUrl && !message.videoUrl.startsWith("blob:")) {
       return message.videoUrl
     }
-    // Fall back to any available URL
     return message.videoUrl || message.mediaUrl || "#"
   }
 
@@ -2801,7 +2775,6 @@ const VideoMessage = ({ message, position }) => {
         preload="metadata"
         onError={(e) => {
           console.error("Video load error:", e)
-          // Try to reload with different URL if available
           if (message.mediaUrl && e.target.src !== message.mediaUrl) {
             e.target.src = message.mediaUrl
           }
@@ -2867,30 +2840,106 @@ const getStatusOrder = (status) => {
   }
 }
 
+// FIXED: Improved message merging with better duplicate detection
 const mergeMessages = (newMessages, existingMessages) => {
   const uniqueMessagesMap = new Map()
+  const messagesByContent = new Map() // Track by content and timestamp for better deduplication
+  
+  // Helper function to create a content-based key for deduplication
+  const createContentKey = (msg) => {
+    const baseKey = `${msg.type}_${msg.sentAt || 0}_${msg.sender || ''}`
+    switch (msg.type) {
+      case MessageType.TEXT:
+        return `${baseKey}_${msg.text || ''}`
+      case MessageType.IMAGE:
+        return `${baseKey}_${msg.imageUrl || msg.mediaUrl || ''}`
+      case MessageType.VIDEO:
+        return `${baseKey}_${msg.videoUrl || msg.mediaUrl || ''}`
+      case MessageType.DOCUMENT:
+        return `${baseKey}_${msg.documentName || msg.fileName || ''}`
+      case MessageType.TEMPLATE:
+        return `${baseKey}_${msg.bodyText || ''}`
+      default:
+        return baseKey
+    }
+  }
+
+  // Process existing messages first
   existingMessages.forEach((msg) => {
-    uniqueMessagesMap.set(msg.id, msg)
+    if (msg.id) {
+      uniqueMessagesMap.set(msg.id, msg)
+      const contentKey = createContentKey(msg)
+      messagesByContent.set(contentKey, msg.id)
+    }
   })
 
+  // Process new messages
   newMessages.forEach((newMessage) => {
+    if (!newMessage.id) return
+
+    const contentKey = createContentKey(newMessage)
+    const existingMessageId = messagesByContent.get(contentKey)
     const existing = uniqueMessagesMap.get(newMessage.id)
+    
+    // Check for content-based duplicates
+    if (existingMessageId && existingMessageId !== newMessage.id) {
+      const existingByContent = uniqueMessagesMap.get(existingMessageId)
+      if (existingByContent) {
+        // Update the existing message if the new one has better data
+        if (
+          (!newMessage.isLocalMessage && existingByContent.isLocalMessage) ||
+          getStatusOrder(newMessage.status) > getStatusOrder(existingByContent.status) ||
+          (newMessage.mediaUrl && !existingByContent.mediaUrl && !newMessage.mediaUrl.startsWith("blob:"))
+        ) {
+          uniqueMessagesMap.set(existingMessageId, { ...existingByContent, ...newMessage, id: existingMessageId })
+        }
+        return // Skip adding as separate message
+      }
+    }
+
+    // Handle ID-based duplicates
     if (existing) {
       if (
         (!newMessage.isLocalMessage && existing.isLocalMessage) ||
         getStatusOrder(newMessage.status) > getStatusOrder(existing.status) ||
-        (newMessage.mediaUrl && !existing.mediaUrl)
+        (newMessage.mediaUrl && !existing.mediaUrl && !newMessage.mediaUrl.startsWith("blob:"))
       ) {
         uniqueMessagesMap.set(newMessage.id, { ...existing, ...newMessage })
       }
     } else {
       uniqueMessagesMap.set(newMessage.id, newMessage)
+      messagesByContent.set(contentKey, newMessage.id)
     }
   })
 
   return Array.from(uniqueMessagesMap.values()).sort((a, b) => {
     return (a.sentAt || 0) - (b.sentAt || 0)
   })
+}
+
+// FIXED: Clean up storage when updating messages
+const cleanupStorageForUser = (userWaId, messageId) => {
+  try {
+    const stored = sessionStorage.getItem(USER_STORAGE_KEY)
+    if (!stored) return
+    
+    const userList = JSON.parse(stored)
+    const updatedUsers = userList.map(user => {
+      if (user.wa_id_or_sender === userWaId) {
+        // Remove any temporary messages that might have been replaced
+        const cleanedMessages = user.messages.filter(msg => {
+          // Keep the message if it's the current one or doesn't look like a temp duplicate
+          return msg.id === messageId || !msg.id.startsWith('file-msg-') || !msg.isLocalMessage
+        })
+        return { ...user, messages: cleanedMessages }
+      }
+      return user
+    })
+    
+    sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUsers))
+  } catch (error) {
+    console.error("Error cleaning up storage:", error)
+  }
 }
 
 function Chat() {
@@ -2943,7 +2992,7 @@ function Chat() {
 
   const toggleAttachmentMenu3 = () => setIsOpen((prev) => !prev)
 
-  // FIXED: Better file handling with proper video URL management
+  // FIXED: Better file handling with improved message tracking
   const handleFileSend = async (e, type) => {
     const file = e.target.files[0]
     if (!file) return
@@ -2960,7 +3009,7 @@ function Chat() {
       id: messageId,
       type: type,
       text: type === "document" ? file.name : file.name || "",
-      mediaUrl: localBlobUrl, // Start with local blob URL
+      mediaUrl: localBlobUrl,
       imageUrl: type === "image" ? localBlobUrl : undefined,
       videoUrl: type === "video" ? localBlobUrl : undefined,
       documentUrl: type === "document" ? localBlobUrl : undefined,
@@ -3099,7 +3148,7 @@ function Chat() {
 
       const apiReturnedMessageId = sendMessageResult.messages[0].id
 
-      // FIXED: Update message with server URL, ensuring video URL is properly set
+      // FIXED: Update message with server URL and clean up duplicates
       setUserList((prevUsers) => {
         const updatedUsers = prevUsers.map((user) =>
           user.id === selectedUser.id
@@ -3110,9 +3159,9 @@ function Chat() {
                     ? {
                         ...msg,
                         id: apiReturnedMessageId || msg.id,
-                        mediaUrl: uploadedUrl, // Server URL
+                        mediaUrl: uploadedUrl,
                         imageUrl: type === "image" ? uploadedUrl : msg.imageUrl,
-                        videoUrl: type === "video" ? uploadedUrl : msg.videoUrl, // FIXED: Set server URL for video
+                        videoUrl: type === "video" ? uploadedUrl : msg.videoUrl,
                         documentUrl: type === "document" ? uploadedUrl : msg.documentUrl,
                         status: MessageStatus.SENT,
                         isLocalMessage: false,
@@ -3130,6 +3179,9 @@ function Chat() {
 
       // Clean up local blob URL
       URL.revokeObjectURL(localBlobUrl)
+      
+      // Clean up any potential duplicates in storage
+      cleanupStorageForUser(selectedUser.wa_id_or_sender, apiReturnedMessageId || messageId)
 
       simulateMessageStatusUpdates(apiReturnedMessageId || messageId, selectedUser.wa_id_or_sender)
       setIsOpen(false)
@@ -3337,8 +3389,8 @@ function Chat() {
 
         const templateId = apiMessage.phone_number_id || "361462453714220"
         const templateName = parsed.name || "unknown_template"
-        let templateData = {}
 
+        let templateData = {}
         try {
           const res = await fetch(`${BASE_URL}/api/phone/get/message_template/${templateId}/${templateName}`)
           const json = await res.json()
@@ -3412,8 +3464,8 @@ function Chat() {
         return {
           ...commonProps,
           type: MessageType.VIDEO,
-          videoUrl: videoUrl, // FIXED: Use the correct video URL
-          mediaUrl: videoUrl, // FIXED: Also set mediaUrl for consistency
+          videoUrl: videoUrl,
+          mediaUrl: videoUrl,
           caption: apiMessage.message_body || "",
         }
 
@@ -3504,8 +3556,10 @@ function Chat() {
       }
 
       setSelectedUser(updatedUser)
+
       const updatedUsers = userList.map((u) => (u.id === selectedUser.id ? updatedUser : u))
       setUserList(updatedUsers)
+
       setCurrentPage(nextPage)
 
       setTimeout(() => {
@@ -3803,6 +3857,7 @@ function Chat() {
     }
   }
 
+  // FIXED: Improved user selection with better message handling
   const handleUserSelect = async (user) => {
     setSelectedUser(user)
     if (isMobile) setShowSidebar(false)
@@ -3817,6 +3872,8 @@ function Chat() {
       const localMessagesForUser = storedUser ? storedUser.messages : []
 
       const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
+
+      // FIXED: Use improved merge function
       const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
 
       const originalUser = userList.find(
@@ -4038,8 +4095,8 @@ function Chat() {
           }
         } else {
           const componentsForApi = []
-          const headerComponent = componentsArray.find((comp) => comp.type === "HEADER")
 
+          const headerComponent = componentsArray.find((comp) => comp.type === "HEADER")
           if (headerComponent) {
             if (headerComponent.format === "IMAGE") {
               const imageUrl = customHeaderImageUrl.trim() || headerComponent.example?.header_handle?.[0]
@@ -4193,7 +4250,6 @@ function Chat() {
     const selectedValue = e.target.value
     setSelectedOption(selectedValue)
     setShowDropdown(true)
-
     setCustomHeaderImageUrl("")
     setShowImageUrlInput(false)
 
@@ -4206,6 +4262,7 @@ function Chat() {
       const template = templates.find((t) => t.name === selectedValue)
       if (template) {
         setSelectedTemplateObject(template)
+
         let componentsArray = []
         try {
           componentsArray = JSON.parse(template.components)
@@ -4231,6 +4288,7 @@ function Chat() {
             .map((_, i) => {
               return templateExampleParams[i] !== undefined ? templateExampleParams[i] : ""
             })
+
           setTemplateBodyParameters(initialParams)
 
           let previewText = bodyText
@@ -4266,11 +4324,14 @@ function Chat() {
 
         const bodyComponent = componentsArray.find((comp) => comp.type === "BODY")
         let previewText = bodyComponent?.text || ""
+
         newParams.forEach((paramValue, i) => {
           previewText = previewText.replace(new RegExp(`\\{\\{${i + 1}\\}\\}`, "g"), paramValue)
         })
+
         setDropdownContent(previewText)
       }
+
       return newParams
     })
   }
@@ -4676,6 +4737,7 @@ function Chat() {
                   const showDateSeparator =
                     index === 0 ||
                     getMessageDate(msg.sentAt) !== getMessageDate(selectedUser.messages[index - 1].sentAt)
+
                   const isMessageFromContact = msg.role === "user" && msg.sender === selectedUser.wa_id_or_sender
                   const position = isMessageFromContact ? "left" : "right"
 
@@ -4879,4 +4941,3 @@ function Chat() {
 }
 
 export default Chat
-
