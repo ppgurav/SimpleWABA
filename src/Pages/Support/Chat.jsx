@@ -1,5 +1,3 @@
-"use client"
-
 import {
   Mic,
   Menu,
@@ -19,6 +17,7 @@ import {
   Video,
   File,
   ChevronDown,
+  Send,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import axios from "axios"
@@ -1315,6 +1314,7 @@ function Chat() {
           ? {
               ...user,
               messages: [...user.messages, newMsg],
+              
             }
           : user,
       )
@@ -1418,35 +1418,32 @@ function Chat() {
     setHasMoreMessages(true)
     setShouldScrollToBottom(true)
     setIsNearBottom(true)
-
+  
     if (user.wa_id_or_sender) {
       const storedUsers = loadMessagesFromStorage()
       const storedUser = storedUsers.find((u) => u.wa_id_or_sender === user.wa_id_or_sender)
       const localMessagesForUser = storedUser ? storedUser.messages : []
-
+  
       const { messages: apiMessagesPage1, hasMore } = await fetchUserMessages(user.wa_id_or_sender, 1, false)
       const mergedMessages = mergeMessages(apiMessagesPage1, localMessagesForUser)
-
-      const originalUser = userList.find(
-        (u) =>
-          (user.id && u.id && user.id === u.id) || (user.wa_id_or_sender && user.wa_id_or_sender === u.wa_id_or_sender),
-      )
-
-      if (!originalUser) return
-
+  
       const updatedUser = {
-        ...originalUser,
+        ...user,
         messages: mergedMessages,
       }
-
+  
       setSelectedUser(updatedUser)
       setHasMoreMessages(hasMore)
-
-      const updatedUsers = userList.map((u) => (u === originalUser ? updatedUser : u))
+  
+      const updatedUsers = userList.map((u) =>
+        (u.wa_id_or_sender === user.wa_id_or_sender ? updatedUser : u)
+      )
+  
       setUserList(updatedUsers)
       saveMessagesToStorage(updatedUsers)
     }
   }
+  
 
   useEffect(() => {
     const activeUsers = userList.filter((u) => u.activeLast24Hours === true)
@@ -2381,7 +2378,8 @@ function Chat() {
                     className="bg-green-500 text-white p-1.5 sm:p-2 rounded-full hover:bg-green-600"
                     disabled={uploadingFile}
                   >
-                    <svg
+                    <Send />
+                    {/* <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
                       height="16"
@@ -2395,7 +2393,7 @@ function Chat() {
                     >
                       <line x1="22" y1="2" x2="11" y2="13"></line>
                       <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
+                    </svg> */}
                   </button>
                 </div>
               </div>
