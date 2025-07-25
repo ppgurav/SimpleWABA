@@ -310,7 +310,7 @@ const Dashboard = () => {
               Welcome Back, {userProfile?.verified_name || "Demo"} 👋
             </h2>
             <p className="text-sm sm:text-base text-gray-600">
-              Here's what's happening with your WhatsApp business today.
+              Here's what's happening with your WhatsApp business today...
             </p>
           </div>
 
