@@ -162,7 +162,7 @@ function App() {
             <Route path="/new-contact" element={<NewContactAssis />} />
             <Route path="/campaign/edit/:id" element={<CampaignReport />} />
 
-            {/* Nested Setup Routes */}
+
             <Route path="/setup" element={<Setup />}>
               <Route path="status" element={<Status />} />
               <Route path="source" element={<Source />} />

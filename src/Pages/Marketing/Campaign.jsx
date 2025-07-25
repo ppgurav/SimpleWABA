@@ -387,7 +387,7 @@ const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessTo
   })) || []
 
 
-  // Delete campaign mutation
+
   const deleteCampaignMutation = useMutation({
     mutationFn: async (campaignId) => {
       const response = await fetch(``, {

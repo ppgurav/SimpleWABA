@@ -290,7 +290,7 @@ function Navbar({ children }) {
   }
 
   const toggleContactDropdown = () => {
-    // Only allow dropdown in expanded state
+
     if (isOpen) {
       setContactExpanded(!contactExpanded)
     }

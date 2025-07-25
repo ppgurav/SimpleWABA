@@ -26,7 +26,7 @@ function Container() {
         <Navbar />
       </div>
 
-      {/* Scrollable main content */}
+
       <main className="flex-1 overflow-y-auto p-4">
         <Outlet />
       </main>
