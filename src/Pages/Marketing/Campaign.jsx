@@ -302,15 +302,13 @@ import { useRef, useState } from "react"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { ArrowDownUp, ChevronDown, ChevronUp, Eye, EyeOff, FilterIcon as Funnel } from "lucide-react"
+import { ArrowDownUp, ChartColumn, ChevronDown, ChevronUp, Eye, EyeOff, FilterIcon as Funnel } from "lucide-react"
 import SearchHeader from "../../Components/SearchHeader"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-hot-toast"
 import axios from "axios"
 
 dayjs.extend(relativeTime)
-
-// API functions
 const api = {
   get: async (url) => {
     const response = await fetch(url)
@@ -322,7 +320,7 @@ const api = {
 }
 
 function Campaign() {
-  // Default wabaId for demo
+
   const [selectedIds, setSelectedIds] = useState([])
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState("id")
@@ -333,27 +331,16 @@ function Campaign() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(3)
   const navigate = useNavigate()
-
-  // Fetch campaigns from API
   const {
     data: campaignsResponse,
     refetch,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["campaigns",],
-    // queryFn: async () => {
-    //   try {
-    //     const response = await api.get(`http://localhost:3001/api/campaigns/${wabaId}`)
-    //     return response
-    //   } catch (error) {
-    //     toast.error("Failed to fetch campaigns")
-    //     throw error
-    //   }
-    // },
+     queryKey: ["campaigns"],
     queryFn: async () => {
-      const wabaId = sessionStorage.getItem("waba_id");
-      const accessToken = sessionStorage.getItem("auth_token");
+      const wabaId = sessionStorage.getItem("waba_id")|| "";
+      const accessToken = sessionStorage.getItem("auth_token") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
   
       if (!wabaId || !accessToken) {
         console.error("Missing waba_id or auth_token in sessionStorage");
@@ -361,14 +348,21 @@ function Campaign() {
       }
   
       try {
-        const response = await axios.get(``, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+//         const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7
+// Request Method`, {
+//           headers: {
+//             Authorization: `Bearer ${accessToken}`,
+//           },
+const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessToken=${accessToken}`, {
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
         });
   
         console.log("API Response:", response.data);
-        return Array.isArray(response.data.data) ? response.data.data : [];
+        return Array.isArray(response.data.campaigns) ? response.data.campaigns : [];
+
+        // return Array.isArray(response.data.data) ? response.data.data : [];
       } catch (error) {
         console.error("Error fetching segments:", error?.response?.data || error.message);
         throw new Error("Failed to load segment");
@@ -382,15 +376,16 @@ function Campaign() {
 
   const campaigns =
   campaignsResponse?.map((campaign) => ({
-    id: campaign.id,
-    campaignName: campaign.name,
-    template: campaign.template_name || "N/A",
-    relationType: campaign.status || "Active",
-    total: Math.floor(Math.random() * 100),
-    deleveredTo: Math.floor(Math.random() * 100),
-    readBy: Math.floor(Math.random() * 50),
-    createdAt: campaign.created_at,
+    id: campaign.campaign_id,
+    campaignName: campaign.campaign_name,
+    template: campaign.campaign_template || "N/A",
+    relationType: campaign.campaign_status || "Active",
+    total: campaign.contact_count || 0,
+    display_phone_number: campaign.display_phone_number || "N/A",
+    readBy: Math.floor(Math.random() * campaign.contact_count / 2),
+    createdAt: campaign.campaign_created_at,
   })) || []
+
 
   // Delete campaign mutation
   const deleteCampaignMutation = useMutation({
@@ -489,11 +484,15 @@ function Campaign() {
     { label: "ID", key: "id" },
     { label: "CAMPAIGN_NAME", key: "campaignName" },
     { label: "TEMPLATE", key: "template" },
+    { label: "Phone", key: "display_phone_number" },
+    // { label: "STATUS", key: "relationType" },
+    { label: "Count", key: "total" },
     { label: "STATUS", key: "relationType" },
-    { label: "TOTAL", key: "total" },
-    { label: "DELIVERED_TO", key: "deleveredTo" },
-    { label: "READ_BY", key: "readBy" },
+    // { label: "Phone", key: "display_phone_number" },
+    // { label: "READ_BY", key: "readBy" },
     { label: "CREATED_AT", key: "createdAt" },
+    { label: "UPDATED_AT", key: "readBy" },
+    { label: "ACTION", key: "action" }, 
   ]
 
   const totalPages = Math.ceil(filteredCampaigns.length / itemsPerPage)
@@ -633,6 +632,19 @@ function Campaign() {
                     {!hiddenColumns.includes("id") && <td className="p-2 md:p-3">{item.id}</td>}
                     {!hiddenColumns.includes("campaignName") && <td className="p-2 md:p-3">{item.campaignName}</td>}
                     {!hiddenColumns.includes("template") && <td className="p-2 md:p-3">{item.template}</td>}
+                    {!hiddenColumns.includes("display_phone_number") && <td className="p-2 md:p-3">{item.display_phone_number}</td>}
+                    {/* {!hiddenColumns.includes("relationType") && (
+                      <td className="p-2 md:p-3">
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded-md inline-block text-center ${
+                            item.relationType === "Active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {item.relationType}
+                        </span>
+                      </td>
+                    )} */}
+                    {!hiddenColumns.includes("total") && <td className="p-2 md:p-3">{item.total}</td>}
                     {!hiddenColumns.includes("relationType") && (
                       <td className="p-2 md:p-3">
                         <span
@@ -644,12 +656,34 @@ function Campaign() {
                         </span>
                       </td>
                     )}
-                    {!hiddenColumns.includes("total") && <td className="p-2 md:p-3">{item.total}</td>}
-                    {!hiddenColumns.includes("deleveredTo") && <td className="p-2 md:p-3">{item.deleveredTo}</td>}
-                    {!hiddenColumns.includes("readBy") && <td className="p-2 md:p-3">{item.readBy}</td>}
-                    {!hiddenColumns.includes("createdAt") && (
+                    {/* {!hiddenColumns.includes("display_phone_number") && <td className="p-2 md:p-3">{item.display_phone_number}</td>} */}
+                    {/* {!hiddenColumns.includes("readBy") && <td className="p-2 md:p-3">{item.campaign_created_at}</td>} */}
+                    {/* {!hiddenColumns.includes("createdAt") && (
                       <td className="p-2 md:p-3">{dayjs(item.createdAt).fromNow()}</td>
                     )}
+                                        {!hiddenColumns.includes("readBy") && (
+                      <td className="p-2 md:p-3">{dayjs(item.campaign_updated_at).fromNow()}</td>
+                    )} */}
+                    {!hiddenColumns.includes("campaign_created_at") && (
+  <td className="p-2 md:p-3">{dayjs(item.campaign_created_at).format("D MMM YYYY, h:mm a")}</td>
+)}
+{!hiddenColumns.includes("campaign_updated_at") && (
+  <td className="p-2 md:p-3">{dayjs(item.campaign_updated_at).format("D MMM YYYY, h:mm a")}</td>
+)}
+
+{!hiddenColumns.includes("action") && (
+  <td className="p-2 md:p-3">
+    <button
+      onClick={() => navigate(`/campaign/edit/${item.id}`)}
+      className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+    >
+      <ChartColumn size={14} />
+      <span>View Report</span>
+    </button>
+  </td>
+)}
+
+
                   </tr>
                 ))
               )}
