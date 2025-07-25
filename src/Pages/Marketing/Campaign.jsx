@@ -531,15 +531,6 @@ const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessTo
           >
             Create Campaign
           </button>
-          {selectedIds.length > 0 && (
-            <button
-              onClick={handleDeleteSelected}
-              disabled={deleteCampaignMutation.isLoading}
-              className="px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-            >
-              {deleteCampaignMutation.isLoading ? "Deleting..." : `Delete Selected (${selectedIds.length})`}
-            </button>
-          )}
         </div>
         {/* <div className="text-sm text-gray-600">Total: {campaignsResponse?.count || 0} campaigns</div> */}
       </div>
