@@ -42,9 +42,9 @@ const ViewTemplateModal = ({ template, onClose }) => {
         {/* Template Metadata */}
         <div className="space-y-1 text-sm text-gray-700 mb-6">
           <div><strong>Name:</strong> {template.name}</div>
-          <div><strong>Language:</strong> {template.language}</div>
+          {/* <div><strong>Language:</strong> {template.language}</div>
           <div><strong>Created:</strong> {dayjs(template.created_at).format('YYYY-MM-DD')}</div>
-          <div><strong>Updated:</strong> {template.updated_at ? dayjs(template.updated_at).format('YYYY-MM-DD') : '—'}</div>
+          <div><strong>Updated:</strong> {template.updated_at ? dayjs(template.updated_at).format('YYYY-MM-DD') : '—'}</div> */}
         </div>
       </div>
     </div>
