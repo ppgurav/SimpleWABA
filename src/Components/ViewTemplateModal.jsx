@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 const ViewTemplateModal = ({ template, onClose }) => {
   if (!template) return null;
 
-  // Parse the component_data JSON string
+  // Parse component data
   const components = typeof template.component_data === 'string'
     ? JSON.parse(template.component_data)
     : template.component_data;
@@ -13,7 +13,7 @@ const ViewTemplateModal = ({ template, onClose }) => {
   const bodyText = body?.text || '';
   const exampleValues = body?.example?.body_text?.[0] || [];
 
-  // Replace {{1}}, {{2}}, etc., with corresponding example values
+  // Replace {{1}}, {{2}}, etc., in the message body
   const renderedText = bodyText.replace(/{{(\d+)}}/g, (match, index) => {
     const valueIndex = parseInt(index, 10) - 1;
     return exampleValues[valueIndex] || match;
@@ -38,14 +38,23 @@ const ViewTemplateModal = ({ template, onClose }) => {
         <div className="bg-green-50 border border-green-200 rounded-md p-5 text-gray-800 text-sm mb-6 whitespace-pre-wrap">
           {renderedText}
         </div>
-
         {/* Template Metadata */}
         <div className="space-y-1 text-sm text-gray-700 mb-6">
           <div><strong>Name:</strong> {template.name}</div>
+          {/* Uncomment if you want to show more metadata */}
           {/* <div><strong>Language:</strong> {template.language}</div>
           <div><strong>Created:</strong> {dayjs(template.created_at).format('YYYY-MM-DD')}</div>
           <div><strong>Updated:</strong> {template.updated_at ? dayjs(template.updated_at).format('YYYY-MM-DD') : '—'}</div> */}
         </div>
+        
+        {/* Placeholder Values Section */}
+        {exampleValues.length > 0 && (
+          <div className="mb-6 text-sm text-gray-700 space-y-1">
+            {exampleValues.map((val, idx) => (
+              <div key={idx}><strong>Value for &#123;&#123;{idx + 1}&#125;&#125;:</strong> {val}</div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

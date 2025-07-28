@@ -171,7 +171,7 @@
 
 
 import { useState, useEffect } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation } from "react-router-dom"
 import {
   MessageCircle,
   LayoutDashboard,
@@ -290,7 +290,7 @@ function Navbar({ children }) {
   }
 
   const toggleContactDropdown = () => {
-
+    // Only allow dropdown in expanded state
     if (isOpen) {
       setContactExpanded(!contactExpanded)
     }
@@ -725,8 +725,11 @@ function Navbar({ children }) {
         >
           {children}
         </div>
+
+
       </div>
     </div>
+    
   )
 }
 

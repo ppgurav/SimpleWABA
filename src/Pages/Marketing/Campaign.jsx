@@ -348,11 +348,6 @@ function Campaign() {
       }
   
       try {
-//         const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7
-// Request Method`, {
-//           headers: {
-//             Authorization: `Bearer ${accessToken}`,
-//           },
 const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessToken=${accessToken}`, {
   headers: {
     Authorization: `Bearer ${accessToken}`,
