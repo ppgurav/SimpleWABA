@@ -613,6 +613,9 @@
 // }
 
 
+
+
+
 import { useState, useRef, useEffect } from "react"
 import { z } from "zod"
 import {
@@ -678,36 +681,80 @@ export default function CampaignCreate() {
     { id: "2", name: "Subscribers" },
     { id: "3", name: "Leads" },
   ]
-  
-
-  // ✅ Fetch templates from API
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         const response = await fetch(
           "https://waba.mpocket.in/api/phone/get/message_templates/361462453714220?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
         )
-        const data = await response.json()
-
-        // Transform API data to match local structure
-        const formattedTemplates = (data.data || []).map((template) => ({
-          id: template.id || template.name,
-          name: template.name,
-          type: template.templateType || "text",
-          content: template.content || "",
-          mediaUrl: template.mediaUrl || "",
-          variables:
-            template.parameters?.map((param) => param.name) || [], // adjust based on actual API response
-        }))
-
+        const result = await response.json()
+        const formattedTemplates = (result.data || []).map((template) => {
+          let type = "text"
+          let mediaUrl = ""
+          let content = ""
+          let variables = []
+        
+          try {
+            const components = JSON.parse(template.components || "[]")
+            const bodyComponent = components.find((c) => c.type === "BODY")
+            content = bodyComponent?.text || ""
+        
+            // Extract sample values from "example.body_text"
+            const exampleValues = bodyComponent?.example?.body_text?.[0] || []
+        
+            // Match {{1}}, {{2}}, etc.
+            const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
+        
+            variables = variableMatches.map((match, index) => ({
+              key: `var${match[1]}`,
+              label: exampleValues[index] || `Value for {{${match[1]}}}`
+            }))
+        
+            // Handle header media
+            const headerComponent = components.find((c) => c.type === "HEADER")
+            if (headerComponent) {
+              const format = (headerComponent.format || "").toUpperCase()
+              const exampleUrl = headerComponent.example?.header_handle?.[0] || ""
+        
+              if (format === "IMAGE") {
+                type = "image"
+                mediaUrl = exampleUrl
+              } else if (format === "VIDEO") {
+                type = "video"
+                mediaUrl = exampleUrl
+              } else if (format === "DOCUMENT") {
+                type = "document"
+                mediaUrl = exampleUrl
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing components:", e)
+          }
+        
+          return {
+            id: template.id,
+            name: template.name,
+            type,
+            content,
+            mediaUrl,
+            variables // now array of objects: [{ key: 'var1', label: 'Sagar' }, ...]
+          }
+        })
+        
+        
+        
+  
         setTemplates(formattedTemplates)
       } catch (error) {
         console.error("Error fetching templates:", error)
       }
     }
-
+  
     fetchTemplates()
   }, [])
+  
+ 
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -730,6 +777,7 @@ export default function CampaignCreate() {
 
     setSelectedTemplate(template)
   }
+
 
   const handleVariableChange = (variable, value) => {
     setFormData((prev) => ({
@@ -763,14 +811,13 @@ export default function CampaignCreate() {
     setFormData({ ...formData, dataType: type })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     try {
       const dataToValidate = {
         ...formData,
         rawData: formData.dataType === "rawData" ? formData.rawData : undefined,
-        numberGroup:
-          formData.dataType === "groupContact" ? formData.numberGroup : undefined,
+        numberGroup: formData.dataType === "groupContact" ? formData.numberGroup : undefined,
         segment: formData.dataType === "tagSegment" ? formData.segment : undefined,
         excelFile: formData.dataType === "excel" ? formData.excelFile : undefined,
         scheduledDate:
@@ -778,8 +825,59 @@ export default function CampaignCreate() {
             ? formData.scheduledDate || new Date()
             : undefined,
       }
+  
       campaignSchema.parse(dataToValidate)
-      console.log("Form submitted:", formData)
+  
+      const sendData = new FormData()
+      sendData.append("campaignName", formData.campaignName)
+      sendData.append("template", formData.template)
+      sendData.append("sendingMethod", formData.sendingMethod)
+      sendData.append("dataType", formData.dataType)
+      sendData.append("schedulingOption", formData.schedulingOption)
+  
+      if (formData.schedulingOption === "later" && formData.scheduledDate) {
+        sendData.append("scheduledDate", formData.scheduledDate.toISOString())
+      }
+  
+      sendData.append("templateVariables", JSON.stringify(formData.templateVariables))
+  
+      if (formData.dataType === "rawData") {
+        sendData.append("rawData", formData.rawData)
+      } else if (formData.dataType === "groupContact") {
+        sendData.append("numberGroup", formData.numberGroup)
+      } else if (formData.dataType === "tagSegment") {
+        sendData.append("segment", formData.segment)
+      } else if (formData.dataType === "excel" && formData.excelFile) {
+        sendData.append("excelFile", formData.excelFile)
+      }
+  
+      const accessToken =
+        sessionStorage.getItem("auth_token") ||
+        "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
+  
+      // 🚀 POST request with enhanced error handling
+      const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
+        method: "POST",
+        body: sendData,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+  
+      let resultText = await response.text()
+      let result = {}
+  
+      try {
+        result = JSON.parse(resultText)
+      } catch (e) {
+        console.error("Response is not valid JSON:", resultText)
+      }
+  
+      if (!response.ok) {
+        throw new Error(result.message || resultText || "Failed to create campaign")
+      }
+  
+      console.log("Campaign created:", result)
       alert("Campaign created successfully!")
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -791,36 +889,30 @@ export default function CampaignCreate() {
         console.error("Validation errors:", formattedErrors)
       } else {
         console.error("Form submission error:", error)
+        alert(error.message || "An unexpected error occurred")
       }
     }
   }
-
-  // const getPreviewContent = () => {
-  //   if (!selectedTemplate) return ""
-  //   let content = selectedTemplate.content
-  //   if (selectedTemplate.variables) {
-  //     selectedTemplate.variables.forEach((variable, index) => {
-  //       const value = formData.templateVariables[variable] || `{{${index + 1}}}`
-  //       content = content.replace(`{{${index + 1}}}`, value)
-  //     })
-  //   }
-  //   return content
-  // }
-  const getPreviewContent = () => {
-  if (!selectedTemplate || !selectedTemplate.content) return ""
-
+  
+  
+const getPreviewContent = () => {
+  if (!selectedTemplate) return ""
   let content = selectedTemplate.content
-
   if (selectedTemplate.variables) {
     selectedTemplate.variables.forEach((variable, index) => {
-      const replacement = formData.templateVariables[variable] || `{{${index + 1}}}`
-      const regex = new RegExp(`{{${index + 1}}}`, "g")
-      content = content.replace(regex, replacement)
+      const value = formData.templateVariables[variable] || `{{${index + 1}}}`
+      content = content.replace(`{{${index + 1}}}`, value)
     })
   }
-
   return content
 }
+useEffect(() => {
+  if (selectedTemplate) {
+    console.log("Updated preview:", getPreviewContent())
+  }
+}, [formData.templateVariables, selectedTemplate])
+
+
 console.log("selectedTemplate:", selectedTemplate);
 console.log("Preview content:", getPreviewContent());
 
@@ -856,6 +948,25 @@ console.log("Preview content:", getPreviewContent());
               {/* Template Variables */}
               {selectedTemplate && selectedTemplate.variables && selectedTemplate.variables.length > 0 && (
                 <div className="space-y-3">
+                  {selectedTemplate?.mediaUrl && (
+  <div className="mt-4">
+    <label htmlFor="mediaUrl" className="block text-sm font-medium text-gray-700 mb-1">
+      Header Image URL:
+    </label>
+    <input
+      type="text"
+      id="mediaUrl"
+      name="mediaUrl"
+      value={selectedTemplate.mediaUrl}
+      onChange={(e) => {
+        const updatedTemplate = { ...selectedTemplate, mediaUrl: e.target.value }
+        setSelectedTemplate(updatedTemplate)
+      }}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+)}
+
                   {selectedTemplate.variables.map((variable, index) => (
                     <div key={variable}>
                       <label htmlFor={`var-${variable}`} className="block text-sm text-gray-600 mb-1 ">
@@ -867,7 +978,7 @@ console.log("Preview content:", getPreviewContent());
                         value={formData.templateVariables[variable] || ""}
                         onChange={(e) => handleVariableChange(variable, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder={`Enter value for ${variable}`}
+                        placeholder={`${variable}`}
                       />
                     </div>
                   ))}
@@ -891,6 +1002,7 @@ console.log("Preview content:", getPreviewContent());
             </div>
           </div>
           <div>
+            
             <h2 className="text-lg font-semibold mb-4">Data Type</h2>
             <div className="space-y-4">
               <div>
@@ -1053,6 +1165,57 @@ console.log("Preview content:", getPreviewContent());
               </div>
             )}
           </div>
+          {/* Segment Options */}
+<div>
+  <h2 className="text-lg font-semibold mb-4 mt-2">Segment Options</h2>
+  <div className="space-y-4">
+    <div className="flex flex-col space-y-2">
+      <label className="inline-flex items-center">
+        <input
+          type="radio"
+          name="segmentOption"
+          value="create"
+          checked={formData.segmentOption === "create"}
+          onChange={() => setFormData({ ...formData, segmentOption: "create" })}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+        />
+        <span className="ml-2 text-sm text-gray-700">Create New Segment</span>
+      </label>
+
+      <label className="inline-flex items-center">
+        <input
+          type="radio"
+          name="segmentOption"
+          value="existing"
+          checked={formData.segmentOption === "existing"}
+          onChange={() => setFormData({ ...formData, segmentOption: "existing" })}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+        />
+        <span className="ml-2 text-sm text-gray-700">Select Existing Segment</span>
+      </label>
+    </div>
+
+    {formData.segmentOption === "create" && (
+      <div className="mt-2">
+        <label htmlFor="segmentName" className="block text-sm font-medium text-gray-700 mb-1">
+          Segment Name:
+        </label>
+        <input
+          type="text"
+          id="segmentName"
+          name="segmentName"
+          value={formData.segmentName || ""}
+          onChange={(e) =>
+            setFormData({ ...formData, segmentName: e.target.value })
+          }
+          placeholder="Enter new segment name"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    )}
+  </div>
+</div>
+
           <div>
             <h2 className="text-lg font-semibold mb-4 mt-2">Scheduling Campaigns</h2>
             <div className="space-y-4">
@@ -1136,74 +1299,43 @@ console.log("Preview content:", getPreviewContent());
                         </div>
                       )}
                       {selectedTemplate.type !== "text" && selectedTemplate.mediaUrl && (
+                        
                         <>
                           <div className="mt-4">
-                            {selectedTemplate.type === "image" && (
-                              <img
-                                src={
-                                  selectedTemplate.mediaUrl ||
-                                  "/Users/pravingurav/WebMarksss/my-project/public/waba logo 18-04-2025 (1).svg" ||
-                                  "/placeholder.svg" ||
-                                  "/placeholder.svg"
-                                }
-                                alt="Template media"
-                                className="max-w-full h-auto rounded-md border border-gray-200"
-                              />
-                            )}
+                            {selectedTemplate?.type === "image" && selectedTemplate?.mediaUrl && (
+                                <img
+                                  src={selectedTemplate.mediaUrl}
+                                  alt="Image Preview"
+                                  className="w-full rounded-md mb-3 border"
+                                />
+                              )}
                             <p className="text-gray-600 mb-4">{getPreviewContent()}</p>
-                            {selectedTemplate.type === "document" && (
-                              <div className="flex items-center p-3 bg-gray-100 rounded-md">
-                                <div className="bg-white p-2 rounded mr-3">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-6 w-6 text-gray-500"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                  </svg>
-                                </div>
-                                <span className="text-sm text-gray-600">Document Preview</span>
-                              </div>
-                            )}
-                            {selectedTemplate.type === "video" && (
-                              <div className="relative pt-[56.25%] bg-gray-100 rounded-md">
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-12 w-12 text-gray-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                                    />
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                    />
-                                  </svg>
-                                </div>
-                              </div>
-                            )}
+                            {selectedTemplate?.type === "document" && selectedTemplate?.mediaUrl && (
+                                <a
+                                  href={selectedTemplate.mediaUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline text-sm block mb-3"
+                                >
+                                  📄 View Document
+                                </a>
+                              )}
+                            {selectedTemplate?.type === "video" && selectedTemplate?.mediaUrl && (
+                              <video
+                                controls
+                                className="w-full rounded-md mb-3 border"
+                                src={selectedTemplate.mediaUrl}
+                              />
+                              )}
+                              
+
                           </div>
                         </>
                       )}
                     </div>
                   </div>
-                ) : (
+                ) 
+                : (
                   <div className="bg-white p-6 rounded-md border border-gray-200 flex flex-col items-center justify-center min-h-[300px] text-center">
                     <div className="text-gray-400 mb-4"></div>
                     <p className="text-gray-500 max-w-xs">Select a template from the dropdown to see a preview here.</p>
