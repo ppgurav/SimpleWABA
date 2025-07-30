@@ -329,7 +329,7 @@ function Campaign() {
   const [hiddenColumns, setHiddenColumns] = useState([])
   const Timer = useRef(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(3)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
   const navigate = useNavigate()
   const {
     data: campaignsResponse,
