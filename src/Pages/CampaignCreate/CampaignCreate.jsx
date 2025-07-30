@@ -688,59 +688,76 @@ export default function CampaignCreate() {
           "https://waba.mpocket.in/api/phone/get/message_templates/361462453714220?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
         )
         const result = await response.json()
+        // const formattedTemplates = (result.data || []).map((template) => {
+        //   let type = "text"
+        //   let mediaUrl = ""
+        //   let content = ""
+        //   let variables = []
+        
+        //   try {
+        //     const components = JSON.parse(template.components || "[]")
+        //     const bodyComponent = components.find((c) => c.type === "BODY")
+        //     content = bodyComponent?.text || ""
+        
+        //     // Extract sample values from "example.body_text"
+        //     const exampleValues = bodyComponent?.example?.body_text?.[0] || []
+        
+        //     // Match {{1}}, {{2}}, etc.
+        //     const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
+        
+        //     variables = variableMatches.map((match, index) => ({
+        //       key: `var${match[1]}`,
+        //       label: exampleValues[index] || `Value for {{${match[1]}}}`
+        //     }))
+        
+        //     // Handle header media
+        //     const headerComponent = components.find((c) => c.type === "HEADER")
+        //     if (headerComponent) {
+        //       const format = (headerComponent.format || "").toUpperCase()
+        //       const exampleUrl = headerComponent.example?.header_handle?.[0] || ""
+        
+        //       if (format === "IMAGE") {
+        //         type = "image"
+        //         mediaUrl = exampleUrl
+        //       } else if (format === "VIDEO") {
+        //         type = "video"
+        //         mediaUrl = exampleUrl
+        //       } else if (format === "DOCUMENT") {
+        //         type = "document"
+        //         mediaUrl = exampleUrl
+        //       }
+        //     }
+        //   } catch (e) {
+        //     console.error("Error parsing components:", e)
+        //   }
+        
+        //   return {
+        //     id: template.id,
+        //     name: template.name,
+        //     type,
+        //     content,
+        //     mediaUrl,
+        //     variables // now array of objects: [{ key: 'var1', label: 'Sagar' }, ...]
+        //   }
+        // })
         const formattedTemplates = (result.data || []).map((template) => {
-          let type = "text"
-          let mediaUrl = ""
-          let content = ""
-          let variables = []
-        
-          try {
-            const components = JSON.parse(template.components || "[]")
-            const bodyComponent = components.find((c) => c.type === "BODY")
-            content = bodyComponent?.text || ""
-        
-            // Extract sample values from "example.body_text"
-            const exampleValues = bodyComponent?.example?.body_text?.[0] || []
-        
-            // Match {{1}}, {{2}}, etc.
-            const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
-        
-            variables = variableMatches.map((match, index) => ({
-              key: `var${match[1]}`,
-              label: exampleValues[index] || `Value for {{${match[1]}}}`
-            }))
-        
-            // Handle header media
-            const headerComponent = components.find((c) => c.type === "HEADER")
-            if (headerComponent) {
-              const format = (headerComponent.format || "").toUpperCase()
-              const exampleUrl = headerComponent.example?.header_handle?.[0] || ""
-        
-              if (format === "IMAGE") {
-                type = "image"
-                mediaUrl = exampleUrl
-              } else if (format === "VIDEO") {
-                type = "video"
-                mediaUrl = exampleUrl
-              } else if (format === "DOCUMENT") {
-                type = "document"
-                mediaUrl = exampleUrl
-              }
-            }
-          } catch (e) {
-            console.error("Error parsing components:", e)
-          }
-        
+          const components = JSON.parse(template.components || "[]")
+          const bodyComponent = components.find((c) => c.type === "BODY")
+          const content = bodyComponent?.text || ""
+          
+          // Extract variables like {{1}}, {{2}}, etc.
+          const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
+          const variableNames = variableMatches.map((match, index) => `var${match[1]}`) // or generate your own variable keys
+  
           return {
             id: template.id,
             name: template.name,
-            type,
+            type: "text", // or determine from other component types (IMAGE, DOCUMENT, etc.)
             content,
-            mediaUrl,
-            variables // now array of objects: [{ key: 'var1', label: 'Sagar' }, ...]
+            mediaUrl: "", // not provided in this response, but can be extended
+            variables: variableNames,
           }
         })
-        
         
         
   
