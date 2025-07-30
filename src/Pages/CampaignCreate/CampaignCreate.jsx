@@ -688,58 +688,7 @@ export default function CampaignCreate() {
           "https://waba.mpocket.in/api/phone/get/message_templates/361462453714220?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
         )
         const result = await response.json()
-        // const formattedTemplates = (result.data || []).map((template) => {
-        //   let type = "text"
-        //   let mediaUrl = ""
-        //   let content = ""
-        //   let variables = []
-        
-        //   try {
-        //     const components = JSON.parse(template.components || "[]")
-        //     const bodyComponent = components.find((c) => c.type === "BODY")
-        //     content = bodyComponent?.text || ""
-        
-        //     // Extract sample values from "example.body_text"
-        //     const exampleValues = bodyComponent?.example?.body_text?.[0] || []
-        
-        //     // Match {{1}}, {{2}}, etc.
-        //     const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
-        
-        //     variables = variableMatches.map((match, index) => ({
-        //       key: `var${match[1]}`,
-        //       label: exampleValues[index] || `Value for {{${match[1]}}}`
-        //     }))
-        
-        //     // Handle header media
-        //     const headerComponent = components.find((c) => c.type === "HEADER")
-        //     if (headerComponent) {
-        //       const format = (headerComponent.format || "").toUpperCase()
-        //       const exampleUrl = headerComponent.example?.header_handle?.[0] || ""
-        
-        //       if (format === "IMAGE") {
-        //         type = "image"
-        //         mediaUrl = exampleUrl
-        //       } else if (format === "VIDEO") {
-        //         type = "video"
-        //         mediaUrl = exampleUrl
-        //       } else if (format === "DOCUMENT") {
-        //         type = "document"
-        //         mediaUrl = exampleUrl
-        //       }
-        //     }
-        //   } catch (e) {
-        //     console.error("Error parsing components:", e)
-        //   }
-        
-        //   return {
-        //     id: template.id,
-        //     name: template.name,
-        //     type,
-        //     content,
-        //     mediaUrl,
-        //     variables // now array of objects: [{ key: 'var1', label: 'Sagar' }, ...]
-        //   }
-        // })
+
         const formattedTemplates = (result.data || []).map((template) => {
           const components = JSON.parse(template.components || "[]")
           const bodyComponent = components.find((c) => c.type === "BODY")
@@ -828,91 +777,185 @@ export default function CampaignCreate() {
     setFormData({ ...formData, dataType: type })
   }
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault()
+  //   try {
+  //     const dataToValidate = {
+  //       ...formData,
+  //       rawData: formData.dataType === "rawData" ? formData.rawData : undefined,
+  //       numberGroup: formData.dataType === "groupContact" ? formData.numberGroup : undefined,
+  //       segment: formData.dataType === "tagSegment" ? formData.segment : undefined,
+  //       excelFile: formData.dataType === "excel" ? formData.excelFile : undefined,
+  //       scheduledDate:
+  //         formData.schedulingOption === "later"
+  //           ? formData.scheduledDate || new Date()
+  //           : undefined,
+  //     }
+  
+  //     campaignSchema.parse(dataToValidate)
+  
+  //     const sendData = new FormData()
+  //     sendData.append("campaignName", formData.campaignName)
+  //     sendData.append("template", formData.template)
+  //     sendData.append("sendingMethod", formData.sendingMethod)
+  //     sendData.append("dataType", formData.dataType)
+  //     sendData.append("schedulingOption", formData.schedulingOption)
+  
+  //     if (formData.schedulingOption === "later" && formData.scheduledDate) {
+  //       sendData.append("scheduledDate", formData.scheduledDate.toISOString())
+  //     }
+  
+  //     sendData.append("templateVariables", JSON.stringify(formData.templateVariables))
+  
+  //     if (formData.dataType === "rawData") {
+  //       sendData.append("rawData", formData.rawData)
+  //     } else if (formData.dataType === "groupContact") {
+  //       sendData.append("numberGroup", formData.numberGroup)
+  //     } else if (formData.dataType === "tagSegment") {
+  //       sendData.append("segment", formData.segment)
+  //     } else if (formData.dataType === "excel" && formData.excelFile) {
+  //       sendData.append("excelFile", formData.excelFile)
+  //     }
+  
+  //     const accessToken =
+  //       sessionStorage.getItem("auth_token") ||
+  //       "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
+  
+  //     // 🚀 POST request with enhanced error handling
+  //     const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
+  //       method: "POST",
+  //       body: sendData,
+  //       headers: {
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //     })
+  
+  //     let resultText = await response.text()
+  //     let result = {}
+  
+  //     try {
+  //       result = JSON.parse(resultText)
+  //     } catch (e) {
+  //       console.error("Response is not valid JSON:", resultText)
+  //     }
+  
+  //     if (!response.ok) {
+  //       throw new Error(result.message || resultText || "Failed to create campaign")
+  //     }
+  
+  //     console.log("Campaign created:", result)
+  //     alert("Campaign created successfully!")
+  //   } catch (error) {
+  //     if (error instanceof z.ZodError) {
+  //       const formattedErrors = {}
+  //       error.errors.forEach((err) => {
+  //         formattedErrors[err.path[0]] = err.message
+  //       })
+  //       setErrors(formattedErrors)
+  //       console.error("Validation errors:", formattedErrors)
+  //     } else {
+  //       console.error("Form submission error:", error)
+  //       alert(error.message || "An unexpected error occurred")
+  //     }
+  //   }
+  // } 
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+  
     try {
+      // Validate with camelCase keys (matches formData keys)
       const dataToValidate = {
-        ...formData,
-        rawData: formData.dataType === "rawData" ? formData.rawData : undefined,
-        numberGroup: formData.dataType === "groupContact" ? formData.numberGroup : undefined,
-        segment: formData.dataType === "tagSegment" ? formData.segment : undefined,
-        excelFile: formData.dataType === "excel" ? formData.excelFile : undefined,
-        scheduledDate:
-          formData.schedulingOption === "later"
-            ? formData.scheduledDate || new Date()
-            : undefined,
-      }
+        campaignName: formData.campaignName,
+        template: formData.template,
+        sendingMethod: formData.sendingMethod,
+        dataType: formData.dataType,
+        schedulingOption: formData.schedulingOption,
+        segment: formData.segment,
+        templateVariables: formData.templateVariables,
+        rawData: formData.rawData,
+        // Add other formData fields you use
+      };
   
-      campaignSchema.parse(dataToValidate)
+      campaignSchema.parse(dataToValidate);
   
-      const sendData = new FormData()
-      sendData.append("campaignName", formData.campaignName)
-      sendData.append("template", formData.template)
-      sendData.append("sendingMethod", formData.sendingMethod)
-      sendData.append("dataType", formData.dataType)
-      sendData.append("schedulingOption", formData.schedulingOption)
+      // Now prepare the payload for the API with snake_case keys:
+      const parameters = Array.isArray(formData.templateVariables)
+        ? formData.templateVariables.map((variable) => ({
+            type: "text",
+            text: variable.text || "",
+          }))
+        : [];
   
-      if (formData.schedulingOption === "later" && formData.scheduledDate) {
-        sendData.append("scheduledDate", formData.scheduledDate.toISOString())
-      }
+      const apiPayload = {
+        campaign_name: formData.campaignName,
+        template_name: formData.template,
+        language_code: "en", // adjust if dynamic
+        data_type: formData.dataType,
+        schedule: formData.schedulingOption === "later" ? "later" : "now",
+        new_segment_name: formData.segment || undefined,
+        phone_number_id: 361462453714220, // dynamic if needed
+        payload: {
+          components: [
+            {
+              type: "body",
+              parameters,
+            },
+          ],
+        },
+        raw_data: formData.dataType === "rawData" ? formData.rawData : undefined,
+      };
   
-      sendData.append("templateVariables", JSON.stringify(formData.templateVariables))
-  
-      if (formData.dataType === "rawData") {
-        sendData.append("rawData", formData.rawData)
-      } else if (formData.dataType === "groupContact") {
-        sendData.append("numberGroup", formData.numberGroup)
-      } else if (formData.dataType === "tagSegment") {
-        sendData.append("segment", formData.segment)
-      } else if (formData.dataType === "excel" && formData.excelFile) {
-        sendData.append("excelFile", formData.excelFile)
-      }
-  
+      // Get access token
       const accessToken =
         sessionStorage.getItem("auth_token") ||
         "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
   
-      // 🚀 POST request with enhanced error handling
+      // Send JSON request to API with snake_case keys
       const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
         method: "POST",
-        body: sendData,
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-      })
+        body: JSON.stringify(apiPayload),
+      });
   
-      let resultText = await response.text()
-      let result = {}
+      const text = await response.text();
   
+      let result;
       try {
-        result = JSON.parse(resultText)
-      } catch (e) {
-        console.error("Response is not valid JSON:", resultText)
+        result = JSON.parse(text);
+      } catch {
+        throw new Error(`Server response is not JSON: ${text}`);
       }
   
       if (!response.ok) {
-        throw new Error(result.message || resultText || "Failed to create campaign")
+        throw new Error(result.message || "Failed to create campaign");
       }
   
-      console.log("Campaign created:", result)
-      alert("Campaign created successfully!")
+      console.log("Campaign created:", result);
+      alert("Campaign created successfully!");
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const formattedErrors = {}
+        const formattedErrors = {};
         error.errors.forEach((err) => {
-          formattedErrors[err.path[0]] = err.message
-        })
-        setErrors(formattedErrors)
-        console.error("Validation errors:", formattedErrors)
+          formattedErrors[err.path[0]] = err.message;
+        });
+        setErrors(formattedErrors);
+        console.error("Validation errors:", formattedErrors);
       } else {
-        console.error("Form submission error:", error)
-        alert(error.message || "An unexpected error occurred")
+        console.error("Form submission error:", error);
+        alert(error.message || "An unexpected error occurred");
       }
     }
-  }
+  };
   
   
-const getPreviewContent = () => {
+
+
+  const getPreviewContent = () => {
   if (!selectedTemplate) return ""
   let content = selectedTemplate.content
   if (selectedTemplate.variables) {
