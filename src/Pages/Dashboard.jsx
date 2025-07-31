@@ -460,8 +460,8 @@ const Dashboard = () => {
             <img
               src={
                 // userProfile?.profile_picture_url ||
-                // "https://pps.whatsapp.net/v/t61.24694-24/427468236_498644819772812_8332225527870182080_n.jpg?ccb=11-4&oh=01_Q5Aa1wH1u7ImglHj_83UXlcauaij9brdl0ii_KxhQ-1hadrB7Q&oe=68640908&_nc_sid=5e03e0&_nc_cat=109" ||
-                "/file.jpeg"
+                    // "https://pps.whatsapp.net/v/t61.24694-24/427468236_498644819772812_8332225527870182080_n.jpg?ccb=11-4&oh=01_Q5Aa1wH1u7ImglHj_83UXlcauaij9brdl0ii_KxhQ-1hadrB7Q&oe=68640908&_nc_sid=5e03e0&_nc_cat=109" ||
+                "file.jpeg"
               }
               alt="Profile"
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-md border-4 border-white"
