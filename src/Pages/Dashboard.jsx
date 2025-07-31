@@ -491,7 +491,7 @@ const Dashboard = () => {
             <div className="bg-gray-50 p-4 sm:p-5 rounded-lg shadow-sm border border-gray-100 flex items-center gap-3">
               <Globe size={18} className="text-purple-500 flex-shrink-0" />
               <span className="text-gray-700 text-sm sm:text-base truncate">
-                {userProfile?.websites?.[0] || "Website / Location Info"}
+                {userProfile?.websites || "Website / Location Info"}
               </span>
             </div>
 

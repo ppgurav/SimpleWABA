@@ -655,7 +655,6 @@ const campaignSchema = z
       path: ["dataType"],
     },
   )
-
 export default function CampaignCreate() {
   const [formData, setFormData] = useState({
     campaignName: "",
@@ -681,43 +680,92 @@ export default function CampaignCreate() {
     { id: "2", name: "Subscribers" },
     { id: "3", name: "Leads" },
   ]
+  // useEffect(() => {
+  //   const fetchTemplates = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         "https://waba.mpocket.in/api/phone/get/message_templates/361462453714220?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
+  //       )
+  //       const result = await response.json()
+
+  //       const formattedTemplates = (result.data || []).map((template) => {
+  //         const components = JSON.parse(template.components || "[]")
+  //         const bodyComponent = components.find((c) => c.type === "BODY")
+  //         const content = bodyComponent?.text || ""
+          
+  //         // Extract variables like {{1}}, {{2}}, etc.
+  //         const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
+  //         const variableNames = variableMatches.map((match, index) => `var${match[1]}`) // or generate your own variable keys
+  
+  //         return {
+  //           id: template.id,
+  //           name: template.name,
+  //           type: "text", // or determine from other component types (IMAGE, DOCUMENT, etc.)
+  //           content,
+  //           mediaUrl: "", // not provided in this response, but can be extended
+  //           variables: variableNames,
+  //         }
+  //       })
+        
+        
+  
+  //       setTemplates(formattedTemplates)
+  //     } catch (error) {
+  //       console.error("Error fetching templates:", error)
+  //     }
+  //   }
+  
+  //   fetchTemplates()
+  // }, [])
+
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         const response = await fetch(
           "https://waba.mpocket.in/api/phone/get/message_templates/361462453714220?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
-        )
-        const result = await response.json()
-
+        );
+        const result = await response.json();
+  
         const formattedTemplates = (result.data || []).map((template) => {
-          const components = JSON.parse(template.components || "[]")
-          const bodyComponent = components.find((c) => c.type === "BODY")
-          const content = bodyComponent?.text || ""
-          
-          // Extract variables like {{1}}, {{2}}, etc.
-          const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
-          const variableNames = variableMatches.map((match, index) => `var${match[1]}`) // or generate your own variable keys
+          const components = JSON.parse(template.components || "[]");
+          const bodyComponent = components.find((c) => c.type === "BODY");
+          const headerComponent = components.find((c) => c.type === "HEADER");
+  
+          const content = bodyComponent?.text || "";
+          const variableMatches = [...content.matchAll(/{{(\d+)}}/g)];
+          const variableNames = variableMatches.map((match) => `var${match[1]}`);
+  
+          let type = "text";
+          let mediaUrl = "";
+  
+          if (headerComponent?.format) {
+            if (headerComponent.format === "IMAGE") type = "image";
+            else if (headerComponent.format === "VIDEO") type = "video";
+            else if (headerComponent.format === "DOCUMENT") type = "document";
+  
+            // Attempt to extract media URL (custom logic – update according to API)
+            mediaUrl = headerComponent.example?.header_handle?.[0] || "";
+          }
   
           return {
             id: template.id,
             name: template.name,
-            type: "text", // or determine from other component types (IMAGE, DOCUMENT, etc.)
+            type,
             content,
-            mediaUrl: "", // not provided in this response, but can be extended
+            mediaUrl,
             variables: variableNames,
-          }
-        })
-        
-        
+          };
+        });
   
-        setTemplates(formattedTemplates)
+        setTemplates(formattedTemplates);
       } catch (error) {
-        console.error("Error fetching templates:", error)
+        console.error("Error fetching templates:", error);
       }
-    }
+    };
   
-    fetchTemplates()
-  }, [])
+    fetchTemplates();
+  }, []);
+  
   
  
   
@@ -776,13 +824,122 @@ export default function CampaignCreate() {
   const handleDataTypeChange = (type) => {
     setFormData({ ...formData, dataType: type })
   }
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  
+  //   try {
+  //     const dataToValidate = {
+  //       campaignName: formData.campaignName,
+  //       template: formData.template, // still ID
+  //       sendingMethod: formData.sendingMethod,
+  //       dataType: formData.dataType,
+  //       schedulingOption: formData.schedulingOption,
+  //       segment: formData.segment,
+  //       templateVariables: formData.templateVariables,
+  //       rawData: formData.rawData,
+  //     };
+  
+  //     campaignSchema.parse(dataToValidate);
+  
+  //     // 🧠 Parse rawData if it's a string
+  //     let rawData = formData.rawData;
+  //     if (typeof rawData === "string") {
+  //       const lines = rawData
+  //         .split("\n")
+  //         .map((line) => line.trim())
+  //         .filter(Boolean);
+  
+  //       rawData = lines.map((line) => {
+  //         const [name, phone_number] = line.split(",");
+  //         return {
+  //           name: name?.trim() || "",
+  //           phone_number: phone_number?.trim() || "",
+  //         };
+  //       });
+  //     }
+  
+  //     // ✅ Extract template variables
+  //     const templateVariables = Object.values(formData.templateVariables || {});
+  
+  //     const parameters = templateVariables.map((value) => ({
+  //       type: "text",
+  //       text: value,
+  //     }));
+  
+  //     const components = [
+  //       {
+  //         type: "body",
+  //         parameters,
+  //       },
+  //     ];
+  
+  //     // ✅ Use template NAME instead of ID
+  //     const templateName = selectedTemplate?.name || "unknown_template";
+  
+  //     const apiPayload = {
+  //       campaign_name: formData.campaignName,
+  //       template_name: templateName, // 👈 This is the fix
+  //       language_code: "en",
+  //       data_type: formData.dataType,
+  //       schedule: formData.schedulingOption === "later" ? "later" : "now",
+  //       new_segment_name: formData.segment || undefined,
+  //       phone_number_id: 361462453714220,
+  //       payload: {
+  //         components,
+  //       },
+  //       raw_data: formData.dataType === "rawData" ? rawData : undefined,
+  //     };
+  
+  //     const accessToken =
+  //       sessionStorage.getItem("auth_token") ||
+  //       "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
+  
+  //     const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${accessToken}`,
+  //       },
+  //       body: JSON.stringify(apiPayload),
+  //     });
+  
+  //     const text = await response.text();
+  //     let result;
+  //     try {
+  //       result = JSON.parse(text);
+  //     } catch {
+  //       throw new Error(`Server response is not JSON: ${text}`);
+  //     }
+  
+  //     if (!response.ok) {
+  //       throw new Error(result.message || "Failed to create campaign");
+  //     }
+  
+  //     console.log("Campaign created:", result);
+  //     alert("Campaign created successfully!");
+  //   } catch (error) {
+  //     if (error instanceof z.ZodError) {
+  //       const formattedErrors = {};
+  //       error.errors.forEach((err) => {
+  //         formattedErrors[err.path[0]] = err.message;
+  //       });
+  //       setErrors(formattedErrors);
+  //       console.error("Validation errors:", formattedErrors);
+  //     } else {
+  //       console.error("Form submission error:", error);
+  //       alert(error.message || "An unexpected error occurred");
+  //     }
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
   
     try {
       const dataToValidate = {
         campaignName: formData.campaignName,
-        template: formData.template, // still ID
+        template: formData.template,
         sendingMethod: formData.sendingMethod,
         dataType: formData.dataType,
         schedulingOption: formData.schedulingOption,
@@ -793,7 +950,7 @@ export default function CampaignCreate() {
   
       campaignSchema.parse(dataToValidate);
   
-      // 🧠 Parse rawData if it's a string
+      // Parse rawData from textarea string
       let rawData = formData.rawData;
       if (typeof rawData === "string") {
         const lines = rawData
@@ -810,27 +967,44 @@ export default function CampaignCreate() {
         });
       }
   
-      // ✅ Extract template variables
+      // Extract template variables
       const templateVariables = Object.values(formData.templateVariables || {});
-  
-      const parameters = templateVariables.map((value) => ({
+      const bodyParams = templateVariables.map((value) => ({
         type: "text",
         text: value,
       }));
   
-      const components = [
-        {
-          type: "body",
-          parameters,
-        },
-      ];
+      const components = [];
   
-      // ✅ Use template NAME instead of ID
-      const templateName = selectedTemplate?.name || "unknown_template";
+      // ✅ Ensure HEADER component for image template is added
+      if (
+        selectedTemplate &&
+        selectedTemplate.type === "image" &&
+        selectedTemplate.mediaId
+      ) {
+        components.push({
+          type: "header",
+          parameters: [
+            {
+              type: "image",
+              image: {
+                id: selectedTemplate.mediaId,
+              },
+            },
+          ],
+        });
+      }
   
+      // ✅ Always add BODY component
+      components.push({
+        type: "body",
+        parameters: bodyParams,
+      });
+  
+      // Final payload
       const apiPayload = {
         campaign_name: formData.campaignName,
-        template_name: templateName, // 👈 This is the fix
+        template_name: selectedTemplate?.name || "unknown_template",
         language_code: "en",
         data_type: formData.dataType,
         schedule: formData.schedulingOption === "later" ? "later" : "now",
@@ -841,6 +1015,8 @@ export default function CampaignCreate() {
         },
         raw_data: formData.dataType === "rawData" ? rawData : undefined,
       };
+  
+      console.log("Sending payload:", apiPayload); // debug payload
   
       const accessToken =
         sessionStorage.getItem("auth_token") ||
@@ -885,11 +1061,6 @@ export default function CampaignCreate() {
   };
   
   
-  
-  
-  
-
-
   const getPreviewContent = () => {
   if (!selectedTemplate) return ""
   let content = selectedTemplate.content
