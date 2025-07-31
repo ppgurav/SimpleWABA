@@ -674,7 +674,9 @@ export default function CampaignCreate() {
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const [templates, setTemplates] = useState([])
   const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState(false);
 
+  
   const numberGroups = [
     { id: "1", name: "Customers" },
     { id: "2", name: "Subscribers" },
