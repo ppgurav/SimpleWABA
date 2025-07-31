@@ -331,6 +331,7 @@ function Campaign() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const navigate = useNavigate()
+  
   const {
     data: campaignsResponse,
     refetch,
@@ -382,7 +383,36 @@ const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessTo
   })) || []
 
 
+  const getPaginationRange = () => {
+    const pages = []
+  
+    // Always include the first page
+    pages.push(1)
+  
+    // Show next pages progressively from 2 up to currentPage + 1 or totalPages - 1
+    const endPage = Math.min(currentPage + 1, totalPages - 1)
+  
+    for (let i = 2; i <= endPage; i++) {
+      pages.push(i)
+    }
+  
+    // Show ellipsis if there's a gap before the last page
+    if (endPage < totalPages - 1) {
+      pages.push("...")
+    }
+  
+    // Always show last page if totalPages > 1
+    if (totalPages > 1) {
+      pages.push(totalPages)
+    }
+  
+    return pages
+  }
+  
+  
+  
 
+  
   const deleteCampaignMutation = useMutation({
     mutationFn: async (campaignId) => {
       const response = await fetch(``, {
@@ -698,7 +728,7 @@ const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessTo
               </span>
             </div>
 
-            <div className="flex space-x-1">
+            {/* <div className="flex space-x-1">
               <button
                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -732,7 +762,51 @@ const response = await axios.get(`https://waba.mpocket.in/api/campaigns?accessTo
               >
                 Next
               </button>
-            </div>
+            </div> */}
+            <div className="flex space-x-1">
+  <button
+    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+    disabled={currentPage === 1}
+    className={`px-3 py-1 rounded ${
+      currentPage === 1
+        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+        : "bg-white border hover:bg-gray-50 text-gray-700"
+    }`}
+  >
+    Prev
+  </button>
+
+  {getPaginationRange().map((page, index) =>
+    page === "..." ? (
+      <span key={index} className="px-3 py-1 text-gray-500">...</span>
+    ) : (
+      <button
+        key={page}
+        onClick={() => setCurrentPage(page)}
+        className={`px-3 py-1 rounded ${
+          currentPage === page
+            ? "bg-indigo-600 text-white"
+            : "bg-white border hover:bg-gray-50 text-gray-700"
+        }`}
+      >
+        {page}
+      </button>
+    )
+  )}
+
+  <button
+    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+    disabled={currentPage === totalPages}
+    className={`px-3 py-1 rounded ${
+      currentPage === totalPages
+        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+        : "bg-white border hover:bg-gray-50 text-gray-700"
+    }`}
+  >
+    Next
+  </button>
+</div>
+
           </div>
         </div>
       </div>

@@ -312,7 +312,7 @@ const formatDateTime = (dateStr) => {
                 ) : (
                   dynamicData.map((item, index) => (
                     <tr key={index} className="text-gray-700">
-                      <td className="px-4 py-2 border">{item.recipient_id || "N/A"}</td>
+                      <td className="px-4 py-2 border">{item.wa_id || "N/A"}</td>
                       <td className="px-4 py-2 border">{item.status || "N/A"}</td>
                       <td className="px-4 py-2 border">{item.timestamp || "N/A"}</td>
                       <td className="px-4 py-2 border">{item.sent_ts || "N/A"}</td>
