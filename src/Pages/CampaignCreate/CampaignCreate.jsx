@@ -777,95 +777,102 @@ export default function CampaignCreate() {
     setFormData({ ...formData, dataType: type })
   }
 
+
   // const handleSubmit = async (e) => {
-  //   e.preventDefault()
+  //   e.preventDefault();
+  
   //   try {
+  //     // Validate with camelCase keys (matches formData keys)
   //     const dataToValidate = {
-  //       ...formData,
-  //       rawData: formData.dataType === "rawData" ? formData.rawData : undefined,
-  //       numberGroup: formData.dataType === "groupContact" ? formData.numberGroup : undefined,
-  //       segment: formData.dataType === "tagSegment" ? formData.segment : undefined,
-  //       excelFile: formData.dataType === "excel" ? formData.excelFile : undefined,
-  //       scheduledDate:
-  //         formData.schedulingOption === "later"
-  //           ? formData.scheduledDate || new Date()
-  //           : undefined,
-  //     }
+  //       campaignName: formData.campaignName,
+  //       template: formData.template,
+  //       sendingMethod: formData.sendingMethod,
+  //       dataType: formData.dataType,
+  //       schedulingOption: formData.schedulingOption,
+  //       segment: formData.segment,
+  //       templateVariables: formData.templateVariables,
+  //       rawData: formData.rawData,
+  //       // Add other formData fields you use
+  //     };
   
-  //     campaignSchema.parse(dataToValidate)
+  //     campaignSchema.parse(dataToValidate);
   
-  //     const sendData = new FormData()
-  //     sendData.append("campaignName", formData.campaignName)
-  //     sendData.append("template", formData.template)
-  //     sendData.append("sendingMethod", formData.sendingMethod)
-  //     sendData.append("dataType", formData.dataType)
-  //     sendData.append("schedulingOption", formData.schedulingOption)
+  //     // Now prepare the payload for the API with snake_case keys:
+  //     const parameters = Array.isArray(formData.templateVariables)
+  //       ? formData.templateVariables.map((variable) => ({
+  //           type: "text",
+  //           text: variable.text || "",
+  //         }))
+  //       : [];
   
-  //     if (formData.schedulingOption === "later" && formData.scheduledDate) {
-  //       sendData.append("scheduledDate", formData.scheduledDate.toISOString())
-  //     }
+  //     const apiPayload = {
+  //       campaign_name: formData.campaignName,
+  //       template_name: formData.template,
+  //       language_code: "en", // adjust if dynamic
+  //       data_type: formData.dataType,
+  //       schedule: formData.schedulingOption === "later" ? "later" : "now",
+  //       new_segment_name: formData.segment || undefined,
+  //       phone_number_id: 361462453714220, // dynamic if needed
+  //       payload: {
+  //         components: [
+  //           {
+  //             type: "body",
+  //             parameters,
+  //           },
+  //         ],
+  //       },
+  //       raw_data: formData.dataType === "rawData" ? formData.rawData : undefined,
+  //     };
   
-  //     sendData.append("templateVariables", JSON.stringify(formData.templateVariables))
-  
-  //     if (formData.dataType === "rawData") {
-  //       sendData.append("rawData", formData.rawData)
-  //     } else if (formData.dataType === "groupContact") {
-  //       sendData.append("numberGroup", formData.numberGroup)
-  //     } else if (formData.dataType === "tagSegment") {
-  //       sendData.append("segment", formData.segment)
-  //     } else if (formData.dataType === "excel" && formData.excelFile) {
-  //       sendData.append("excelFile", formData.excelFile)
-  //     }
-  
+  //     // Get access token
   //     const accessToken =
   //       sessionStorage.getItem("auth_token") ||
   //       "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
   
-  //     // 🚀 POST request with enhanced error handling
+  //     // Send JSON request to API with snake_case keys
   //     const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
   //       method: "POST",
-  //       body: sendData,
   //       headers: {
+  //         "Content-Type": "application/json",
   //         Authorization: `Bearer ${accessToken}`,
   //       },
-  //     })
+  //       body: JSON.stringify(apiPayload),
+  //     });
   
-  //     let resultText = await response.text()
-  //     let result = {}
+  //     const text = await response.text();
   
+  //     let result;
   //     try {
-  //       result = JSON.parse(resultText)
-  //     } catch (e) {
-  //       console.error("Response is not valid JSON:", resultText)
+  //       result = JSON.parse(text);
+  //     } catch {
+  //       throw new Error(`Server response is not JSON: ${text}`);
   //     }
   
   //     if (!response.ok) {
-  //       throw new Error(result.message || resultText || "Failed to create campaign")
+  //       throw new Error(result.message || "Failed to create campaign");
   //     }
   
-  //     console.log("Campaign created:", result)
-  //     alert("Campaign created successfully!")
+  //     console.log("Campaign created:", result);
+  //     alert("Campaign created successfully!");
   //   } catch (error) {
   //     if (error instanceof z.ZodError) {
-  //       const formattedErrors = {}
+  //       const formattedErrors = {};
   //       error.errors.forEach((err) => {
-  //         formattedErrors[err.path[0]] = err.message
-  //       })
-  //       setErrors(formattedErrors)
-  //       console.error("Validation errors:", formattedErrors)
+  //         formattedErrors[err.path[0]] = err.message;
+  //       });
+  //       setErrors(formattedErrors);
+  //       console.error("Validation errors:", formattedErrors);
   //     } else {
-  //       console.error("Form submission error:", error)
-  //       alert(error.message || "An unexpected error occurred")
+  //       console.error("Form submission error:", error);
+  //       alert(error.message || "An unexpected error occurred");
   //     }
   //   }
-  // } 
-
-
+  // };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
   
     try {
-      // Validate with camelCase keys (matches formData keys)
       const dataToValidate = {
         campaignName: formData.campaignName,
         template: formData.template,
@@ -875,44 +882,60 @@ export default function CampaignCreate() {
         segment: formData.segment,
         templateVariables: formData.templateVariables,
         rawData: formData.rawData,
-        // Add other formData fields you use
       };
   
       campaignSchema.parse(dataToValidate);
   
-      // Now prepare the payload for the API with snake_case keys:
-      const parameters = Array.isArray(formData.templateVariables)
-        ? formData.templateVariables.map((variable) => ({
-            type: "text",
-            text: variable.text || "",
-          }))
-        : [];
+      // Construct image parameters for header
+      const parameters = [
+        {
+          type: "image",
+          id: formData.imageId || "726059656895674", // fallback image ID
+        },
+      ];
+  
+      const components = [
+        {
+          type: "header",
+          parameters,
+        },
+      ];
+  
+      // 🧠 Robust rawData parsing
+      let rawData = formData.rawData;
+      if (typeof rawData === "string") {
+        const lines = rawData
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean);
+  
+        rawData = lines.map((line) => {
+          const [name, phone_number] = line.split(",");
+          return {
+            name: name?.trim() || "",
+            phone_number: phone_number?.trim() || "",
+          };
+        });
+      }
   
       const apiPayload = {
         campaign_name: formData.campaignName,
         template_name: formData.template,
-        language_code: "en", // adjust if dynamic
+        language_code: "en",
         data_type: formData.dataType,
         schedule: formData.schedulingOption === "later" ? "later" : "now",
         new_segment_name: formData.segment || undefined,
-        phone_number_id: 361462453714220, // dynamic if needed
+        phone_number_id: 361462453714220,
         payload: {
-          components: [
-            {
-              type: "body",
-              parameters,
-            },
-          ],
+          components,
         },
-        raw_data: formData.dataType === "rawData" ? formData.rawData : undefined,
+        raw_data: formData.dataType === "rawData" ? rawData : undefined,
       };
   
-      // Get access token
       const accessToken =
         sessionStorage.getItem("auth_token") ||
         "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
   
-      // Send JSON request to API with snake_case keys
       const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
         method: "POST",
         headers: {
@@ -923,7 +946,6 @@ export default function CampaignCreate() {
       });
   
       const text = await response.text();
-  
       let result;
       try {
         result = JSON.parse(text);
@@ -951,6 +973,7 @@ export default function CampaignCreate() {
       }
     }
   };
+  
   
   
 

@@ -42,6 +42,7 @@ const MessageType = {
   INTERACTIVE: "interactive",
 }
 
+
 const MessageStatus = {
   SENDING: "sending",
   SENT: "sent",
