@@ -333,7 +333,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Total Sent Card */}
+
             <div className="bg-gradient-to-br from-purple-50 to-white p-4 sm:p-6 rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 active:scale-95 cursor-pointer">
               <div className="flex items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                 <div className="bg-purple-100 text-purple-600 p-2 rounded-lg animate-pulse">
