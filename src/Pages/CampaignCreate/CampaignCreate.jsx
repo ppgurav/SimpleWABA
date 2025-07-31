@@ -776,106 +776,13 @@ export default function CampaignCreate() {
   const handleDataTypeChange = (type) => {
     setFormData({ ...formData, dataType: type })
   }
-
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  
-  //   try {
-  //     // Validate with camelCase keys (matches formData keys)
-  //     const dataToValidate = {
-  //       campaignName: formData.campaignName,
-  //       template: formData.template,
-  //       sendingMethod: formData.sendingMethod,
-  //       dataType: formData.dataType,
-  //       schedulingOption: formData.schedulingOption,
-  //       segment: formData.segment,
-  //       templateVariables: formData.templateVariables,
-  //       rawData: formData.rawData,
-  //       // Add other formData fields you use
-  //     };
-  
-  //     campaignSchema.parse(dataToValidate);
-  
-  //     // Now prepare the payload for the API with snake_case keys:
-  //     const parameters = Array.isArray(formData.templateVariables)
-  //       ? formData.templateVariables.map((variable) => ({
-  //           type: "text",
-  //           text: variable.text || "",
-  //         }))
-  //       : [];
-  
-  //     const apiPayload = {
-  //       campaign_name: formData.campaignName,
-  //       template_name: formData.template,
-  //       language_code: "en", // adjust if dynamic
-  //       data_type: formData.dataType,
-  //       schedule: formData.schedulingOption === "later" ? "later" : "now",
-  //       new_segment_name: formData.segment || undefined,
-  //       phone_number_id: 361462453714220, // dynamic if needed
-  //       payload: {
-  //         components: [
-  //           {
-  //             type: "body",
-  //             parameters,
-  //           },
-  //         ],
-  //       },
-  //       raw_data: formData.dataType === "rawData" ? formData.rawData : undefined,
-  //     };
-  
-  //     // Get access token
-  //     const accessToken =
-  //       sessionStorage.getItem("auth_token") ||
-  //       "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7";
-  
-  //     // Send JSON request to API with snake_case keys
-  //     const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${accessToken}`,
-  //       },
-  //       body: JSON.stringify(apiPayload),
-  //     });
-  
-  //     const text = await response.text();
-  
-  //     let result;
-  //     try {
-  //       result = JSON.parse(text);
-  //     } catch {
-  //       throw new Error(`Server response is not JSON: ${text}`);
-  //     }
-  
-  //     if (!response.ok) {
-  //       throw new Error(result.message || "Failed to create campaign");
-  //     }
-  
-  //     console.log("Campaign created:", result);
-  //     alert("Campaign created successfully!");
-  //   } catch (error) {
-  //     if (error instanceof z.ZodError) {
-  //       const formattedErrors = {};
-  //       error.errors.forEach((err) => {
-  //         formattedErrors[err.path[0]] = err.message;
-  //       });
-  //       setErrors(formattedErrors);
-  //       console.error("Validation errors:", formattedErrors);
-  //     } else {
-  //       console.error("Form submission error:", error);
-  //       alert(error.message || "An unexpected error occurred");
-  //     }
-  //   }
-  // };
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
   
     try {
       const dataToValidate = {
         campaignName: formData.campaignName,
-        template: formData.template,
+        template: formData.template, // still ID
         sendingMethod: formData.sendingMethod,
         dataType: formData.dataType,
         schedulingOption: formData.schedulingOption,
@@ -886,22 +793,7 @@ export default function CampaignCreate() {
   
       campaignSchema.parse(dataToValidate);
   
-      // Construct image parameters for header
-      const parameters = [
-        {
-          type: "image",
-          id: formData.imageId || "726059656895674", // fallback image ID
-        },
-      ];
-  
-      const components = [
-        {
-          type: "header",
-          parameters,
-        },
-      ];
-  
-      // 🧠 Robust rawData parsing
+      // 🧠 Parse rawData if it's a string
       let rawData = formData.rawData;
       if (typeof rawData === "string") {
         const lines = rawData
@@ -918,9 +810,27 @@ export default function CampaignCreate() {
         });
       }
   
+      // ✅ Extract template variables
+      const templateVariables = Object.values(formData.templateVariables || {});
+  
+      const parameters = templateVariables.map((value) => ({
+        type: "text",
+        text: value,
+      }));
+  
+      const components = [
+        {
+          type: "body",
+          parameters,
+        },
+      ];
+  
+      // ✅ Use template NAME instead of ID
+      const templateName = selectedTemplate?.name || "unknown_template";
+  
       const apiPayload = {
         campaign_name: formData.campaignName,
-        template_name: formData.template,
+        template_name: templateName, // 👈 This is the fix
         language_code: "en",
         data_type: formData.dataType,
         schedule: formData.schedulingOption === "later" ? "later" : "now",
@@ -973,6 +883,8 @@ export default function CampaignCreate() {
       }
     }
   };
+  
+  
   
   
   
