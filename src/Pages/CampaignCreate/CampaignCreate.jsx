@@ -616,19 +616,16 @@
 
 
 
-"use client"
 
 import { useState, useRef, useEffect } from "react"
 
 const campaignSchema = {
   validate: (data) => {
     const errors = {}
-
     if (!data.campaignName) errors.campaignName = "Campaign name is required"
     if (!data.template) errors.template = "Template selection is required"
     if (!data.sendingMethod) errors.sendingMethod = "Sending method is required"
     if (!data.dataType) errors.dataType = "Data type is required"
-
     if (data.dataType === "rawData" && !data.rawData) {
       errors.dataType = "Please provide the required data for the selected data type"
     }
@@ -641,7 +638,6 @@ const campaignSchema = {
     if (data.dataType === "excel" && !data.excelFile) {
       errors.dataType = "Please provide the required data for the selected data type"
     }
-
     return { isValid: Object.keys(errors).length === 0, errors }
   },
 }
@@ -728,11 +724,11 @@ export default function CampaignCreate() {
   const headerImageInputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
 
-  const numberGroups = [
-    { id: "1", name: "Customers" },
-    { id: "2", name: "Subscribers" },
-    { id: "3", name: "Leads" },
-  ]
+  // New state for groups and tags
+  const [numberGroups, setNumberGroups] = useState([])
+  const [tags, setTags] = useState([])
+  const [loadingGroups, setLoadingGroups] = useState(false)
+  const [loadingTags, setLoadingTags] = useState(false)
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -741,24 +737,20 @@ export default function CampaignCreate() {
           "https://waba.mpocket.in/api/phone/get/message_templates/361462453714220?accessToken=Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7",
         )
         const result = await response.json()
-
         const formattedTemplates = (result.data || []).map((template) => {
           const components = JSON.parse(template.components || "[]")
           const bodyComponent = components.find((c) => c.type === "BODY")
           const headerComponent = components.find((c) => c.type === "HEADER")
-
           const content = bodyComponent?.text || ""
           const variableMatches = [...content.matchAll(/{{(\d+)}}/g)]
           const variableNames = variableMatches.map((match) => `var${match[1]}`)
 
           let type = "text"
           let mediaUrl = ""
-
           if (headerComponent?.format) {
             if (headerComponent.format === "IMAGE") type = "image"
             else if (headerComponent.format === "VIDEO") type = "video"
             else if (headerComponent.format === "DOCUMENT") type = "document"
-
             mediaUrl = headerComponent.example?.header_handle?.[0] || ""
           }
 
@@ -771,15 +763,53 @@ export default function CampaignCreate() {
             variables: variableNames,
           }
         })
-
         setTemplates(formattedTemplates)
       } catch (error) {
         console.error("Error fetching templates:", error)
       }
     }
-
     fetchTemplates()
   }, [])
+
+  // Fetch groups when groupContact is selected
+  useEffect(() => {
+    if (formData.dataType === "groupContact") {
+      const fetchGroups = async () => {
+        setLoadingGroups(true)
+        try {
+          const response = await fetch("https://waba.mpocket.in/api/phone/groups/361462453714220")
+          const result = await response.json()
+          setNumberGroups(result.data || [])
+        } catch (error) {
+          console.error("Error fetching groups:", error)
+          setNumberGroups([])
+        } finally {
+          setLoadingGroups(false)
+        }
+      }
+      fetchGroups()
+    }
+  }, [formData.dataType])
+
+  // Fetch tags when tagSegment is selected
+  useEffect(() => {
+    if (formData.dataType === "tagSegment") {
+      const fetchTags = async () => {
+        setLoadingTags(true)
+        try {
+          const response = await fetch("https://waba.mpocket.in/api/phone/tags/361462453714220")
+          const result = await response.json()
+          setTags(result.data || [])
+        } catch (error) {
+          console.error("Error fetching tags:", error)
+          setTags([])
+        } finally {
+          setLoadingTags(false)
+        }
+      }
+      fetchTags()
+    }
+  }, [formData.dataType])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -800,7 +830,6 @@ export default function CampaignCreate() {
         }, {}) || {},
     })
     setSelectedTemplate(template)
-
     // Reset image upload state when template changes
     setUploadedImageUrl("")
     setUploadedImageId("")
@@ -824,99 +853,44 @@ export default function CampaignCreate() {
     }
   }
 
-  // const handleHeaderImageUpload = async (e) => {
-  //   const file = e.target.files[0]
-  //   if (!file) return
-
-  //   setSelectedFileName(file.name)
-  //   setUploading(true)
-  //   setUploadStatus("Uploading...")
-
-  //   try {
-  //     const formData = new FormData()
-  //     formData.append("file", file)
-
-  //     const response = await fetch("https://waba.mpocket.in/api/361462453714220/upload-file", {
-  //       method: "POST",
-  //       body: formData,
-  //     })
-
-  //     const result = await response.json()
-
-  //     if (response.ok && result.success) {
-  //       setUploadedImageId(result.media_id || result.id)
-  //       setUploadedImageUrl(URL.createObjectURL(file)) // For preview
-  //       setUploadStatus(`✅ Image uploaded successfully! ID: ${result.media_id || result.id}`)
-
-  //       // Update selected template with the uploaded image
-  //       if (selectedTemplate) {
-  //         setSelectedTemplate({
-  //           ...selectedTemplate,
-  //           mediaId: result.media_id || result.id,
-  //           mediaUrl: URL.createObjectURL(file),
-  //         })
-  //       }
-  //     } else {
-  //       setUploadStatus("❌ Upload failed. Please try again.")
-  //     }
-  //   } catch (error) {
-  //     console.error("Upload error:", error)
-  //     setUploadStatus("❌ Upload failed. Please try again.")
-  //   } finally {
-  //     setUploading(false)
-  //   }
-  // }
-
   const handleHeaderImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-  
+
     setSelectedFileName(file.name)
     setUploading(true)
     setUploadStatus("Uploading...")
-  
-    // 🔐 Get the token and waba_id from sessionStorage (no fallback token here)
-    // const wabaId = sessionStorage.getItem("waba_id") || "361462453714220"
+
     const accessToken = sessionStorage.getItem("auth_token") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
-  
-    // if (!wabaId || !accessToken) {
-    //   console.error("Missing waba_id or auth_token in sessionStorage")
-    //   setUploadStatus("❌ Missing authentication credentials.")
-    //   setUploading(false)
-    //   return
-    // }
-  
+
     try {
       const formData = new FormData()
       formData.append("file", file)
-  
-      const response = await fetch(
-        `https://waba.mpocket.in/api/361462453714220/upload-file`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: formData,
-        }
-      )
-  
+
+      const response = await fetch(`https://waba.mpocket.in/api/361462453714220/upload-file`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      })
+
       const contentType = response.headers.get("content-type")
-      const result = contentType?.includes("application/json")
-        ? await response.json()
-        : await response.text()
-  
-      if (response.ok && result?.success) {
-        setUploadedImageId(result.media_id || result.id)
+      const result = contentType?.includes("application/json") ? await response.json() : await response.text()
+
+      console.log("Full upload response:", JSON.stringify(result, null, 2))
+
+      const mediaId = result?.metaMediaId
+      console.log("MediaID", mediaId)
+
+      if (response.ok && (result?.success || mediaId)) {
+        setUploadedImageId(mediaId)
         setUploadedImageUrl(URL.createObjectURL(file))
-        setUploadStatus(
-          `✅ Image uploaded successfully! ID: ${result.media_id || result.id}`
-        )
-  
+        setUploadStatus(`✅ Image uploaded successfully! ID: ${mediaId}`)
         if (selectedTemplate) {
           setSelectedTemplate({
             ...selectedTemplate,
-            mediaId: result.media_id || result.id,
+            mediaId,
             mediaUrl: URL.createObjectURL(file),
           })
         }
@@ -931,8 +905,6 @@ export default function CampaignCreate() {
       setUploading(false)
     }
   }
-  
-  
 
   const handleSchedulingChange = (option) => {
     setFormData({
@@ -952,8 +924,8 @@ export default function CampaignCreate() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
     try {
+      // ✅ Validate form
       const dataToValidate = {
         campaignName: formData.campaignName,
         template: formData.template,
@@ -971,14 +943,13 @@ export default function CampaignCreate() {
         return
       }
 
-      // Parse rawData from textarea string
+      // ✅ Parse rawData
       let rawData = formData.rawData
       if (typeof rawData === "string") {
         const lines = rawData
           .split("\n")
           .map((line) => line.trim())
           .filter(Boolean)
-
         rawData = lines.map((line) => {
           const [name, phone_number] = line.split(",")
           return {
@@ -988,44 +959,45 @@ export default function CampaignCreate() {
         })
       }
 
-      // Extract template variables
+      // ✅ Extract body params
       const templateVariables = Object.values(formData.templateVariables || {})
       const bodyParams = templateVariables.map((value) => ({
         type: "text",
         text: value,
       }))
 
+      // ✅ Build components array
       const components = []
 
-      // ✅ Ensure HEADER component for image template is added
-      if (selectedTemplate && selectedTemplate.type === "image" && uploadedImageId) {
+      // ✅ Add image header if uploadedImageId exists
+      if (uploadedImageId && typeof uploadedImageId === "string" && uploadedImageId.trim() !== "") {
         components.push({
           type: "header",
           parameters: [
             {
               type: "image",
-              image: {
-                id: uploadedImageId,
-              },
+              id: uploadedImageId,
             },
           ],
         })
+      } else {
+        console.warn("⚠️ uploadedImageId missing or invalid — header image not added.")
       }
 
-      // ✅ Always add BODY component
+      // ✅ Always include body
       components.push({
         type: "body",
         parameters: bodyParams,
       })
 
-      // Final payload
+      // ✅ Build final payload
       const apiPayload = {
         campaign_name: formData.campaignName,
         template_name: selectedTemplate?.name || "unknown_template",
         language_code: "en",
         data_type: formData.dataType,
         schedule: formData.schedulingOption === "later" ? "later" : "now",
-        new_segment_name: formData.segment || undefined,
+        new_segment_name: formData.segmentName || formData.campaignName,
         phone_number_id: 361462453714220,
         payload: {
           components,
@@ -1033,8 +1005,14 @@ export default function CampaignCreate() {
         raw_data: formData.dataType === "rawData" ? rawData : undefined,
       }
 
-      console.log("Sending payload:", apiPayload) // debug payload
+      // ✅ Add segment_id for tagSegment data type
+      if (formData.dataType === "tagSegment" && formData.segment) {
+        apiPayload.segment_id = formData.segment
+      }
 
+      console.log("📤 Final API Payload:", JSON.stringify(apiPayload, null, 2))
+
+      // ✅ Auth and API call
       const accessToken = sessionStorage.getItem("auth_token") || "Vpv6mesdUaY3XHS6BKrM0XOdIoQu4ygTVaHmpKMNb29bc1c7"
 
       const response = await fetch("https://waba.mpocket.in/api/store-campaign", {
@@ -1051,18 +1029,18 @@ export default function CampaignCreate() {
       try {
         result = JSON.parse(text)
       } catch {
-        throw new Error(`Server response is not JSON: ${text}`)
+        throw new Error(`❌ Server response is not JSON: ${text}`)
       }
 
       if (!response.ok) {
         throw new Error(result.message || "Failed to create campaign")
       }
 
-      console.log("Campaign created:", result)
-      alert("Campaign created successfully!")
+      console.log("✅ Campaign created:", result)
+      alert("✅ Campaign created successfully!")
     } catch (error) {
       console.error("Form submission error:", error)
-      alert(error.message || "An unexpected error occurred")
+      alert(error.message || "❌ An unexpected error occurred")
     }
   }
 
@@ -1122,12 +1100,10 @@ export default function CampaignCreate() {
                     <span className="text-lg mr-2">📷</span>
                     <span className="text-blue-700 font-medium">Header Image Required</span>
                   </div>
-
                   <div>
                     <label htmlFor="headerImage" className="block text-sm font-medium text-gray-700 mb-2">
                       Upload Header Image:
                     </label>
-
                     <div className="border border-gray-300 rounded-md p-3 bg-white">
                       <input
                         ref={headerImageInputRef}
@@ -1138,15 +1114,19 @@ export default function CampaignCreate() {
                         className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                       />
                     </div>
-
                     {uploadStatus && (
                       <div
-                        className={`mt-2 text-sm ${uploadStatus.includes("✅") ? "text-green-600" : uploadStatus.includes("❌") ? "text-red-600" : "text-blue-600"}`}
+                        className={`mt-2 text-sm ${
+                          uploadStatus.includes("✅")
+                            ? "text-green-600"
+                            : uploadStatus.includes("❌")
+                              ? "text-red-600"
+                              : "text-blue-600"
+                        }`}
                       >
                         {uploadStatus}
                       </div>
                     )}
-
                     {selectedFileName && (
                       <div className="mt-2 text-sm text-gray-600">Selected file: {selectedFileName}</div>
                     )}
@@ -1285,8 +1265,9 @@ export default function CampaignCreate() {
                   value={formData.numberGroup}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loadingGroups}
                 >
-                  <option value="">Select a group</option>
+                  <option value="">{loadingGroups ? "Loading groups..." : "Select a group"}</option>
                   {numberGroups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
@@ -1308,11 +1289,14 @@ export default function CampaignCreate() {
                   value={formData.segment}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={loadingTags}
                 >
-                  <option value="">Select a segment</option>
-                  <option value="new">New Customers</option>
-                  <option value="active">Active Users</option>
-                  <option value="inactive">Inactive Users</option>
+                  <option value="">{loadingTags ? "Loading tags..." : "Select a segment"}</option>
+                  {tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>
+                      {tag.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.segment && <p className="mt-1 text-sm text-red-600">{errors.segment}</p>}
               </div>
@@ -1550,6 +1534,7 @@ export default function CampaignCreate() {
           </div>
         </div>
       </div>
+
       <div className="flex justify-start mt-6">
         <button
           type="submit"
