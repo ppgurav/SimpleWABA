@@ -834,24 +834,7 @@ export default function CampaignCreate() {
   
 
   // Fetch tags when tagSegment is selected
-  // useEffect(() => {
-  //   if (formData.dataType === "tagSegment") {
-  //     const fetchTags = async () => {
-  //       setLoadingTags(true)
-  //       try {
-  //         const response = await fetch("https://waba.mpocket.in/api/phone/tags/361462453714220")
-  //         const result = await response.json()
-  //         setTags(result.data || [])
-  //       } catch (error) {
-  //         console.error("Error fetching tags:", error)
-  //         setTags([])
-  //       } finally {
-  //         setLoadingTags(false)
-  //       }
-  //     }
-  //     fetchTags()
-  //   }
-  // }, [formData.dataType])
+
   useEffect(() => {
     if (formData.dataType === "tagSegment") {
       const fetchTags = async () => {
