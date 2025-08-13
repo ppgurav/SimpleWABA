@@ -164,6 +164,7 @@ function App() {
 
 
             <Route path="/setup" element={<Setup />}>
+            
               <Route path="status" element={<Status />} />
               <Route path="source" element={<Source />} />
               <Route path="AI" element={<AiPrompts />} />

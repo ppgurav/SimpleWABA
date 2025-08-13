@@ -772,44 +772,123 @@ export default function CampaignCreate() {
   }, [])
 
   // Fetch groups when groupContact is selected
+  // useEffect(() => {
+  //   if (formData.dataType === "groupContact") {
+  //     const fetchGroups = async () => {
+  //       setLoadingGroups(true)
+  //       try {
+  //         const accessToken = sessionStorage.getItem("auth_token")
+  //         const response = await fetch("https://api.tickzap.com/api/groups", {
+  //           headers: {
+  //             Authorization: `Bearer ${accessToken}`,
+  //             "Content-Type": "application/json"
+  //           }
+  //         });
+        
+  //         if (!response.ok) {
+  //           const text = await response.text(); // handle non-JSON errors
+  //           throw new Error(`Error ${response.status}: ${text}`);
+  //         }
+        
+  //         const result = await response.json();
+  //         setNumberGroups(result.data || []);
+  //       } catch (error) {
+  //         console.error("Error fetching groups:", error);
+  //         setNumberGroups([]);
+  //       }
+        
+  //     }
+  //     fetchGroups()
+  //   }
+  // }, [formData.dataType])
   useEffect(() => {
     if (formData.dataType === "groupContact") {
       const fetchGroups = async () => {
-        setLoadingGroups(true)
+        setLoadingGroups(true);
         try {
-          const response = await fetch("https://waba.mpocket.in/api/phone/groups/361462453714220")
-          const result = await response.json()
-          setNumberGroups(result.data || [])
+          const accessToken = sessionStorage.getItem("auth_token");
+          const response = await fetch("https://api.tickzap.com/api/groups", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            }
+          });
+  
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Error ${response.status}: ${text}`);
+          }
+  
+          const result = await response.json();
+          setNumberGroups(result.data || []);
         } catch (error) {
-          console.error("Error fetching groups:", error)
-          setNumberGroups([])
+          console.error("Error fetching groups:", error);
+          setNumberGroups([]);
         } finally {
-          setLoadingGroups(false)
+          setLoadingGroups(false); // ✅ Ensure it stops loading
         }
-      }
-      fetchGroups()
+      };
+      fetchGroups();
     }
-  }, [formData.dataType])
+  }, [formData.dataType]);
+  
 
   // Fetch tags when tagSegment is selected
+  // useEffect(() => {
+  //   if (formData.dataType === "tagSegment") {
+  //     const fetchTags = async () => {
+  //       setLoadingTags(true)
+  //       try {
+  //         const response = await fetch("https://waba.mpocket.in/api/phone/tags/361462453714220")
+  //         const result = await response.json()
+  //         setTags(result.data || [])
+  //       } catch (error) {
+  //         console.error("Error fetching tags:", error)
+  //         setTags([])
+  //       } finally {
+  //         setLoadingTags(false)
+  //       }
+  //     }
+  //     fetchTags()
+  //   }
+  // }, [formData.dataType])
   useEffect(() => {
     if (formData.dataType === "tagSegment") {
       const fetchTags = async () => {
-        setLoadingTags(true)
+        setLoadingTags(true);
         try {
-          const response = await fetch("https://waba.mpocket.in/api/phone/tags/361462453714220")
-          const result = await response.json()
-          setTags(result.data || [])
+          const accessToken = sessionStorage.getItem("auth_token")
+          const response = await fetch(
+            "https://api.tickzap.com/api/tags/378243102032704",
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Error ${response.status}: ${text}`);
+          }
+
+          const result = await response.json();
+          console.log("Fetched tags result:", result); // ✅ Check structure
+
+          setTags(result.data || []);
         } catch (error) {
-          console.error("Error fetching tags:", error)
-          setTags([])
+          console.error("Error fetching tags:", error);
+          setTags([]);
         } finally {
-          setLoadingTags(false)
+          setLoadingTags(false);
         }
-      }
-      fetchTags()
+      };
+
+      fetchTags();
     }
-  }, [formData.dataType])
+  }, [formData.dataType]);
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -1254,7 +1333,7 @@ export default function CampaignCreate() {
               </div>
             )}
 
-            {formData.dataType === "groupContact" && (
+            {/* {formData.dataType === "groupContact" && (
               <div>
                 <label htmlFor="numberGroup" className="block text-sm font-medium text-gray-700 mb-1">
                   Select Group
@@ -1276,31 +1355,57 @@ export default function CampaignCreate() {
                 </select>
                 {errors.numberGroup && <p className="mt-1 text-sm text-red-600">{errors.numberGroup}</p>}
               </div>
-            )}
+            )} */}
+            {formData.dataType === "groupContact" && (
+  <div>
+    <label htmlFor="numberGroup" className="block text-sm font-medium text-gray-700 mb-1">
+      Select Group
+    </label>
+    <select
+      id="numberGroup"
+      name="numberGroup"
+      value={formData.numberGroup}
+      onChange={handleInputChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      disabled={loadingGroups}
+    >
+      <option value="">{loadingGroups ? "Loading groups..." : "Select a group"}</option>
+      {numberGroups.map((group) => (
+        <option key={group.id} value={group.id}>
+          {group.group_name} {/* ✅ Corrected property */}
+        </option>
+      ))}
+    </select>
+    {errors.numberGroup && <p className="mt-1 text-sm text-red-600">{errors.numberGroup}</p>}
+  </div>
+)}
 
-            {formData.dataType === "tagSegment" && (
-              <div>
-                <label htmlFor="segment" className="block text-sm font-medium text-gray-700 mb-1">
-                  Select Segment
-                </label>
-                <select
-                  id="segment"
-                  name="segment"
-                  value={formData.segment}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={loadingTags}
-                >
-                  <option value="">{loadingTags ? "Loading tags..." : "Select a segment"}</option>
-                  {tags.map((tag) => (
-                    <option key={tag.id} value={tag.id}>
-                      {tag.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.segment && <p className="mt-1 text-sm text-red-600">{errors.segment}</p>}
-              </div>
-            )}
+
+{formData.dataType === "tagSegment" && (
+  <div>
+    <label htmlFor="segment" className="block text-sm font-medium text-gray-700 mb-1">
+      Select Segment
+    </label>
+    <select
+      id="segment"
+      name="segment"
+      value={formData.segment}
+      onChange={handleInputChange}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      disabled={loadingTags}
+    >
+      <option value="">{loadingTags ? "Loading tags..." : "Select a segment"}</option>
+      {tags.map((tag) => (
+        <option key={tag.id} value={tag.id}>
+          {tag.tag_name} {/* Correct property */}
+        </option>
+      ))}
+    </select>
+
+    {errors.segment && <p className="mt-1 text-sm text-red-600">{errors.segment}</p>}
+  </div>
+)}
+
 
             {formData.dataType === "excel" && (
               <div>
